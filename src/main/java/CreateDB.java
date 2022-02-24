@@ -1,0 +1,97 @@
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+import java.util.ArrayList;
+
+public class CreateDB {
+    public static void main(String args[]) {
+        new CreateDB().go();
+        System.out.println("CreateDB finished.");
+    }
+
+    void go() {
+        System.out.println("Creating embedded DB");
+
+        Connection conn = null;
+        Statement s = null;
+
+        try {
+            String dbName = "derbyDB";
+            //NOTE: This is the install location of the database, hardcoding to work on my machine now.
+            //We will need to change this in the future.
+            conn = DriverManager.getConnection("jdbc:derby:/home/logan/School/Capstone/derbyDB;create=true");
+            System.out.println("Connected to db " + dbName);
+            conn.setAutoCommit(false);
+
+            s = conn.createStatement();
+            s.execute("""
+                    CREATE TABLE Customer
+                    (
+                        CustomerID int NOT NULL,
+                        FirstName varchar(255),
+                        LastName varchar(255),
+                        Phone varchar(255),
+                        Email varchar(255),
+                        PRIMARY KEY (CustomerID)
+                    )""");
+            System.out.println("Created table Customer");
+            s.execute("""
+                    CREATE TABLE Title
+                    (
+                        TitleID int NOT NULL,
+                        Title varchar(255),
+                        Price int,
+                        Notes varchar(8000),
+                        PRIMARY KEY (TitleID)
+                    )""");
+            System.out.println("Created table Title");
+            s.execute("""
+                    CREATE TABLE "Order"
+                    (
+                        CustomerID int NOT NULL,
+                        TitleID int NOT NULL,
+                        Quantity int,
+                        Issue int
+                    )""");
+            System.out.println("Created table Order");
+
+            conn.commit();
+            System.out.println("Committed the transaction");
+
+            try {
+                DriverManager.getConnection("jdbc:derby:;shutdown=true");
+            } catch (SQLException se) {
+                if (((se.getErrorCode() == 5000)
+                        && ("XJ015".equals(se.getSQLState())))) {
+                    System.out.println("Derby shut down normally");
+                } else {
+                    System.out.println("Derby did not shut down normally");
+                    se.printStackTrace();
+                }
+            }
+        } catch (SQLException sqle) {
+            sqle.printStackTrace();
+        } finally {
+            //Cleanup
+            try {
+                if (s != null) {
+                    s.close();
+                    s = null;
+                }
+            } catch (SQLException sqle) {
+                sqle.printStackTrace();
+            }
+            try {
+                if (conn != null) {
+                    conn.close();
+                    conn = null;
+                }
+            } catch (SQLException sqle) {
+                sqle.printStackTrace();
+            }
+        }
+    }
+}
