@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<TabPane tabClosingPolicy="UNAVAILABLE" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml"
+        fx:controller="Controller">
+
+    <Tab fx:id="customerTab" text="Customers">
+        <TableView fx:id="customerTable">
+            <columns>
+                <TableColumn text="Name" fx:id="customerNameColumn"/>
+                <TableColumn text="Phone" fx:id="customerPhoneColumn"/>
+                <TableColumn text="Email" fx:id="customerEmailColumn"/>
+            </columns>
+        </TableView>
+    </Tab>
+    <Tab fx:id="titleTab" text="Titles">
+        <TableView fx:id="titleTable">
+            <columns>
+                <TableColumn text="Title" fx:id="titleTitleColumn"/>
+                <TableColumn text="Price" fx:id="titlePriceColumn"/>
+                <TableColumn text="Notes" fx:id="titleNotesColumn"/>
+            </columns>
+        </TableView>
+    </Tab>
+
+</TabPane>

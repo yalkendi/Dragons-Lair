@@ -28,9 +28,9 @@ public class CreateDB {
 
             s = conn.createStatement();
             s.execute("""
-                    CREATE TABLE Customer
+                    CREATE TABLE Customers
                     (
-                        CustomerID int NOT NULL,
+                        CustomerID int NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
                         FirstName varchar(255),
                         LastName varchar(255),
                         Phone varchar(255),
@@ -39,9 +39,9 @@ public class CreateDB {
                     )""");
             System.out.println("Created table Customer");
             s.execute("""
-                    CREATE TABLE Title
+                    CREATE TABLE Titles
                     (
-                        TitleID int NOT NULL,
+                        TitleID int NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
                         Title varchar(255),
                         Price int,
                         Notes varchar(8000),
@@ -49,10 +49,10 @@ public class CreateDB {
                     )""");
             System.out.println("Created table Title");
             s.execute("""
-                    CREATE TABLE "Order"
+                    CREATE TABLE Orders
                     (
-                        CustomerID int NOT NULL,
-                        TitleID int NOT NULL,
+                        CustomerID int REFERENCES Customers(CustomerID),
+                        TitleID int REFERENCES Titles(TitleID),
                         Quantity int,
                         Issue int
                     )""");
