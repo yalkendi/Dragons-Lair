@@ -108,7 +108,7 @@ public class Controller implements Initializable {
 
     private void createConnection() {
         try {
-            conn = DriverManager.getConnection("jdbc:derby:/home/logan/School/Capstone/derbyDB;");
+            conn = DriverManager.getConnection("jdbc:derby:C:/Users/mcenh.DESKTOP-5IQINC4/OneDrive/Documents/School/CSCI4970-Spring22/Program/derbyDB;");
             System.out.println("Created connection, see!" + conn);
         } catch (SQLException e) {
             e.printStackTrace();
