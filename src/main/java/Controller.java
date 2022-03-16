@@ -1,10 +1,17 @@
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.text.Text;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 
 import java.net.URL;
 import java.sql.*;
@@ -13,14 +20,25 @@ import java.util.ResourceBundle;
 public class Controller implements Initializable {
 
     @FXML private TableView<Customer> customerTable;
+    @FXML private TableView<Order> customerOrderTable;
     @FXML private TableView<Title> titleTable;
-    @FXML private TableColumn<Customer, String> customerNameColumn;
+    @FXML private TableColumn<Customer, String> customerLastNameColumn;
+    @FXML private TableColumn<Customer, String> customerFirstNameColumn;
     @FXML private TableColumn<Customer, String> customerPhoneColumn;
     @FXML private TableColumn<Customer, String> customerEmailColumn;
 
     @FXML private TableColumn<Title, String> titleTitleColumn;
     @FXML private TableColumn<Title, String> titlePriceColumn;
     @FXML private TableColumn<Title, String> titleNotesColumn;
+
+    @FXML private TableColumn<Title, String> customerOrderReqItemsColumn;
+    @FXML private TableColumn<Title, String> customerOrderQuantityColumn;
+    @FXML private TableColumn<Title, String> customerOrderIssueColumn;
+
+    @FXML private Text customerFirstNameText;
+    @FXML private Text customerLastNameText;
+    @FXML private Text customerPhoneText;
+    @FXML private Text customerEmailText;
 
     private static Connection conn = null;
 
@@ -30,19 +48,35 @@ public class Controller implements Initializable {
 
         createConnection();
 
-        System.out.println("Connection SHOULD still exist? This is what we have: " + conn);
-
         //Populate columns for Customer Table
-        customerNameColumn.setCellValueFactory(new PropertyValueFactory<>("fullName"));
+        customerLastNameColumn.setCellValueFactory(new PropertyValueFactory<>("lastName"));
+        customerFirstNameColumn.setCellValueFactory(new PropertyValueFactory<>("firstName"));
         customerPhoneColumn.setCellValueFactory(new PropertyValueFactory<>("phone"));
         customerEmailColumn.setCellValueFactory(new PropertyValueFactory<>("email"));
         customerTable.getItems().setAll(getCustomers());
+
+        //Populate columns for Orders Table
+        customerOrderReqItemsColumn.setCellValueFactory(new PropertyValueFactory<>("titleId"));
+        customerOrderQuantityColumn.setCellValueFactory(new PropertyValueFactory<>("quantity"));
+        customerOrderIssueColumn.setCellValueFactory(new PropertyValueFactory<>("issue"));
+        customerOrderTable.getItems().setAll(getOrders());
 
         //Populate columns for Title Table
         titleTitleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
         titlePriceColumn.setCellValueFactory(new PropertyValueFactory<>("price"));
         titleNotesColumn.setCellValueFactory(new PropertyValueFactory<>("notes"));
         titleTable.getItems().setAll(getTitles());
+
+        //Add Listener for Customer table
+        customerTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            if (newSelection != null) {
+                customerFirstNameText.setText(newSelection.getFirstName());
+                customerLastNameText.setText(newSelection.getLastName());
+                customerPhoneText.setText(newSelection.getPhone());
+                customerEmailText.setText(newSelection.getEmail());
+            }
+        });
+
     }
 
     //Get all Customers
@@ -63,7 +97,7 @@ public class Controller implements Initializable {
                 String lastName = results.getString(3);
                 String phone = results.getString(4);
                 String email = results.getString(5);
-                customers.add(new Customer(firstName, lastName, phone, email));
+                customers.add(new Customer(customerId, firstName, lastName, phone, email));
             }
             results.close();
             s.close();
@@ -106,13 +140,142 @@ public class Controller implements Initializable {
         return titles;
     }
 
+    //Get all Orders
+    public ObservableList<Order> getOrders() {
+
+        ObservableList<Order> orders  = FXCollections.observableArrayList();
+
+        Statement s = null;
+        try
+        {
+            s = conn.createStatement();
+            ResultSet results = s.executeQuery("select * from Orders");
+
+            while(results.next())
+            {
+                int customerId = results.getInt(1);
+                int titleId = results.getInt(2);
+                int issue = results.getInt(3);
+                int quantity = results.getInt(4);
+                orders.add(new Order(customerId, titleId, issue, quantity));
+            }
+            results.close();
+            s.close();
+        }
+        catch (SQLException sqlExcept)
+        {
+            sqlExcept.printStackTrace();
+        }
+
+        return orders;
+    }
+
     private void createConnection() {
         try {
             conn = DriverManager.getConnection("jdbc:derby:/home/logan/School/Capstone/derbyDB;");
-            System.out.println("Created connection, see!" + conn);
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
+    @FXML
+    void handleAddCustomer(ActionEvent event) {
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("NewCustomerBox.fxml"));
+            Parent root = fxmlLoader.load();
+
+            NewCustomerController newCustomerController = fxmlLoader.getController();
+            newCustomerController.setConnection(conn);
+
+            Stage window = new Stage();
+            window.initModality(Modality.APPLICATION_MODAL);
+            window.setTitle("Add Customer");
+            window.setResizable(false);
+            window.setHeight(250);
+            window.setWidth(400);
+            window.setScene(new Scene(root));
+            window.setOnHidden( e -> customerTable.getItems().setAll(getCustomers()));
+
+            window.show();
+        } catch (Exception e) {
+            System.out.println("Error when opening window. This is probably a bug");
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    void handleDeleteCustomer(ActionEvent event) {
+        String firstName = customerFirstNameText.getText();
+        String lastName = customerLastNameText.getText();
+
+        if (customerTable.getSelectionModel().getSelectedItem() == null) {
+            AlertBox.display("Confirm Delete", "Please select a customer.");
+        }
+        else {
+            int customerId = customerTable.getSelectionModel().getSelectedItem().getId();
+
+            boolean confirmDelete = ConfirmBox.display(
+                    "Confirm Delete",
+                    "Are you sure you would like to delete customer " + firstName + " " + lastName + "?");
+            if (confirmDelete) {
+                PreparedStatement s = null;
+                String sql = "DELETE FROM Customers WHERE customerId = ?";
+                try {
+                    s = conn.prepareStatement(sql);
+                    s.setString(1, Integer.toString(customerId));
+                    int rowsAffected = s.executeUpdate();
+
+                    if (rowsAffected == 0) {
+                        //TODO: Throw an error
+                    } else if (rowsAffected > 1) {
+                        //TODO: Throw and error
+                    }
+                    s.close();
+                } catch (SQLException sqlExcept) {
+                    sqlExcept.printStackTrace();
+                }
+            }
+            customerTable.getItems().setAll(getCustomers());
+            customerFirstNameText.setText("");
+            customerLastNameText.setText("");
+            customerPhoneText.setText("");
+            customerEmailText.setText("");
+        }
+    }
+
+    @FXML
+    void handleEditCustomer(ActionEvent event) {
+        if (customerTable.getSelectionModel().getSelectedItem() == null) {
+            AlertBox.display("Confirm Edit", "Please select a customer.");
+        }
+        else {
+            try {
+                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("EditCustomerBox.fxml"));
+                Parent root = fxmlLoader.load();
+
+                EditCustomerController editCustomerController = fxmlLoader.getController();
+                editCustomerController.setConnection(conn);
+                editCustomerController.setCustomer(customerTable.getSelectionModel().getSelectedItem());
+
+                Stage window = new Stage();
+                window.initModality(Modality.APPLICATION_MODAL);
+                window.setTitle("Edit Customer");
+                window.setResizable(false);
+                window.setHeight(250);
+                window.setWidth(400);
+                window.setScene(new Scene(root));
+                window.setOnHidden(e -> {
+                    customerTable.getItems().setAll(getCustomers());
+                    customerFirstNameText.setText("");
+                    customerLastNameText.setText("");
+                    customerPhoneText.setText("");
+                    customerEmailText.setText("");
+                });
+                window.show();
+            } catch (Exception e) {
+                System.out.println("Error when opening window. This is probably a bug");
+                e.printStackTrace();
+            }
+        }
+    }
 }

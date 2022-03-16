@@ -1,31 +1,124 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
 
-<TabPane tabClosingPolicy="UNAVAILABLE" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml"
-        fx:controller="Controller">
-
-    <Tab fx:id="customerTab" text="Customers">
-        <TableView fx:id="customerTable">
-            <columns>
-                <TableColumn text="Name" fx:id="customerNameColumn"/>
-                <TableColumn text="Phone" fx:id="customerPhoneColumn"/>
-                <TableColumn text="Email" fx:id="customerEmailColumn"/>
-            </columns>
-        </TableView>
+<TabPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="700.0" prefWidth="1000.0" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller">
+  <tabs>
+    <Tab text="Customers">
+         <content>
+            <AnchorPane>
+               <children>
+                  <TableView fx:id="customerTable" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="500.0" AnchorPane.topAnchor="50.0">
+                    <columns>
+                        <TableColumn fx:id="customerLastNameColumn" prefWidth="100.0" text="Last Name" />
+                      <TableColumn fx:id="customerFirstNameColumn" prefWidth="100.0" text="First Name" />
+                      <TableColumn fx:id="customerPhoneColumn" prefWidth="125.0" text="Phone Number" />
+                        <TableColumn fx:id="customerEmailColumn" prefWidth="165.0" text="Email" />
+                    </columns>
+                  </TableView>
+                  <VBox alignment="CENTER" prefHeight="749.0" prefWidth="476.0" spacing="10.0" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
+                     <children>
+                        <HBox alignment="CENTER" prefHeight="52.0" prefWidth="476.0" spacing="20.0">
+                           <children>
+                              <Button fx:id="editCustomerButton" mnemonicParsing="false" onAction="#handleEditCustomer" prefHeight="24.0" prefWidth="200.0" text="Edit" />
+                              <Button fx:id="deleteCustomerButton" mnemonicParsing="false" onAction="#handleDeleteCustomer" prefHeight="24.0" prefWidth="200.0" text="Delete" />
+                           </children>
+                           <VBox.margin>
+                              <Insets />
+                           </VBox.margin>
+                        </HBox>
+                        <GridPane prefHeight="172.0" prefWidth="476.0">
+                          <columnConstraints>
+                            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                          </columnConstraints>
+                          <rowConstraints>
+                              <RowConstraints maxHeight="50.0" minHeight="50.0" prefHeight="50.0" vgrow="SOMETIMES" />
+                            <RowConstraints maxHeight="67.0" minHeight="0.0" prefHeight="33.0" vgrow="SOMETIMES" />
+                            <RowConstraints maxHeight="134.0" minHeight="10.0" prefHeight="29.0" vgrow="SOMETIMES" />
+                            <RowConstraints maxHeight="67.0" minHeight="33.0" prefHeight="33.0" vgrow="SOMETIMES" />
+                              <RowConstraints maxHeight="200.0" minHeight="10.0" prefHeight="25.0" vgrow="SOMETIMES" />
+                          </rowConstraints>
+                           <children>
+                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="First Name" GridPane.rowIndex="1" />
+                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Last Name:" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Phone Number:" GridPane.rowIndex="3" />
+                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Email Address:" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                              <Text fx:id="customerFirstNameText" strokeType="OUTSIDE" strokeWidth="0.0" GridPane.rowIndex="2" />
+                              <Text fx:id="customerLastNameText" strokeType="OUTSIDE" strokeWidth="0.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                              <Text fx:id="customerPhoneText" strokeType="OUTSIDE" strokeWidth="0.0" GridPane.rowIndex="4" />
+                              <Text fx:id="customerEmailText" strokeType="OUTSIDE" strokeWidth="0.0" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Customer Details" />
+                           </children>
+                        </GridPane>
+                        <HBox prefHeight="486.0" prefWidth="476.0" spacing="10.0">
+                           <children>
+                              <TableView fx:id="customerOrderTable" prefHeight="317.0" prefWidth="375.0">
+                                <columns>
+                                  <TableColumn fx:id="customerOrderReqItemsColumn" prefWidth="157.0" text="Requested Items" />
+                                  <TableColumn fx:id="customerOrderQuantityColumn" prefWidth="89.0" text="Quantity" />
+                                    <TableColumn fx:id="customerOrderIssueColumn" prefWidth="75.0" text="Issue" />
+                                </columns>
+                              </TableView>
+                              <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0">
+                                 <children>
+                                    <Button mnemonicParsing="false" prefWidth="100.0" text="Add Request" wrapText="true">
+                                       <VBox.margin>
+                                          <Insets bottom="30.0" top="10.0" />
+                                       </VBox.margin>
+                                       <font>
+                                          <Font size="11.0" />
+                                       </font>
+                                    </Button>
+                                    <Button mnemonicParsing="false" prefWidth="100.0" text="Edit/Delete Selected" wrapText="true">
+                                       <font>
+                                          <Font size="11.0" />
+                                       </font>
+                                    </Button>
+                                    <Button mnemonicParsing="false" prefWidth="100.0" text="Export Single Customer List" wrapText="true">
+                                       <font>
+                                          <Font size="11.0" />
+                                       </font>
+                                       <VBox.margin>
+                                          <Insets top="100.0" />
+                                       </VBox.margin>
+                                    </Button>
+                                 </children>
+                              </VBox>
+                           </children>
+                        </HBox>
+                     </children>
+                  </VBox>
+                  <Button fx:id="addCustomerButton" mnemonicParsing="false" onAction="#handleAddCustomer" text="Add New Customer" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="10.0" />
+               </children>
+            </AnchorPane>
+         </content></Tab>
+    <Tab text="Titles">
+      <content>
+        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+               <children>
+                  <TableView fx:id="titleTable" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                    <columns>
+                      <TableColumn fx:id="titleTitleColumn" prefWidth="200.0" text="Title" />
+                      <TableColumn fx:id="titlePriceColumn" prefWidth="100.0" text="Price" />
+                        <TableColumn fx:id="titleNotesColumn" prefWidth="100.0" text="Notes" />
+                    </columns>
+                  </TableView>
+               </children></AnchorPane>
+      </content>
     </Tab>
-    <Tab fx:id="titleTab" text="Titles">
-        <TableView fx:id="titleTable">
-            <columns>
-                <TableColumn text="Title" fx:id="titleTitleColumn"/>
-                <TableColumn text="Price" fx:id="titlePriceColumn"/>
-                <TableColumn text="Notes" fx:id="titleNotesColumn"/>
-            </columns>
-        </TableView>
-    </Tab>
-
+  </tabs>
 </TabPane>

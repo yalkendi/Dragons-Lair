@@ -22,7 +22,7 @@ public class Main extends Application {
         Parent root = FXMLLoader.load(getClass().getResource("sample.fxml"));
         window = primaryStage;
 
-        Scene scene = new Scene(root, 1000, 900);
+        Scene scene = new Scene(root, 1000, 700);
 
         window.setTitle("Pull List");
         window.setOnCloseRequest(e -> {
@@ -31,6 +31,8 @@ public class Main extends Application {
         });
 
         window.setScene(scene);
+        window.setMinHeight(700);
+        window.setMinWidth(1000);
         window.show();
     }
 
