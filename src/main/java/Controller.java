@@ -40,6 +40,10 @@ public class Controller implements Initializable {
     @FXML private Text customerPhoneText;
     @FXML private Text customerEmailText;
 
+    @FXML private Text titleTitleText;
+    @FXML private Text titlePriceText;
+    @FXML private Text titleNotesText;
+
     private static Connection conn = null;
 
     //This is where we load from our database
@@ -63,7 +67,7 @@ public class Controller implements Initializable {
 
         //Populate columns for Title Table
         titleTitleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
-        titlePriceColumn.setCellValueFactory(new PropertyValueFactory<>("price"));
+        titlePriceColumn.setCellValueFactory(new PropertyValueFactory<>("priceDollars"));
         titleNotesColumn.setCellValueFactory(new PropertyValueFactory<>("notes"));
         titleTable.getItems().setAll(getTitles());
 
@@ -74,6 +78,15 @@ public class Controller implements Initializable {
                 customerLastNameText.setText(newSelection.getLastName());
                 customerPhoneText.setText(newSelection.getPhone());
                 customerEmailText.setText(newSelection.getEmail());
+            }
+        });
+
+        //Add Listener for Titles table
+        titleTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            if (newSelection != null) {
+                titleTitleText.setText(newSelection.getTitle());
+                titlePriceText.setText(newSelection.getPriceDollars());
+                titleNotesText.setText(newSelection.getNotes());
             }
         });
 
@@ -127,7 +140,7 @@ public class Controller implements Initializable {
                 String title = results.getString(2);
                 int price= results.getInt(3);
                 String notes = results.getString(4);
-                titles.add(new Title(title, price, notes));
+                titles.add(new Title(titleId, title, price, notes));
             }
             results.close();
             s.close();
@@ -204,6 +217,31 @@ public class Controller implements Initializable {
     }
 
     @FXML
+    void handleAddTitle(ActionEvent event) {
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("NewTitleBox.fxml"));
+            Parent root = fxmlLoader.load();
+
+            NewTitleController newTitleController = fxmlLoader.getController();
+            newTitleController.setConnection(conn);
+
+            Stage window = new Stage();
+            window.initModality(Modality.APPLICATION_MODAL);
+            window.setTitle("Add Title");
+            window.setResizable(false);
+            window.setHeight(250);
+            window.setWidth(400);
+            window.setScene(new Scene(root));
+            window.setOnHidden( e -> titleTable.getItems().setAll(getTitles()));
+
+            window.show();
+        } catch (Exception e) {
+            System.out.println("Error when opening window. This is probably a bug");
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
     void handleDeleteCustomer(ActionEvent event) {
         String firstName = customerFirstNameText.getText();
         String lastName = customerLastNameText.getText();
@@ -244,6 +282,44 @@ public class Controller implements Initializable {
     }
 
     @FXML
+    void handleDeleteTitle(ActionEvent event) {
+        String title = titleTitleText.getText();
+
+        if (titleTable.getSelectionModel().getSelectedItem() == null) {
+            AlertBox.display("Confirm Delete", "Please select a title.");
+        }
+        else {
+            int titleId = titleTable.getSelectionModel().getSelectedItem().getId();
+
+            boolean confirmDelete = ConfirmBox.display(
+                    "Confirm Delete",
+                    "Are you sure you would like to delete " + title + "?");
+            if (confirmDelete) {
+                PreparedStatement s = null;
+                String sql = "DELETE FROM TITLES WHERE TITLEID = ?";
+                try {
+                    s = conn.prepareStatement(sql);
+                    s.setString(1, Integer.toString(titleId));
+                    int rowsAffected = s.executeUpdate();
+
+                    if (rowsAffected == 0) {
+                        //TODO: Throw an error
+                    } else if (rowsAffected > 1) {
+                        //TODO: Throw and error
+                    }
+                    s.close();
+                } catch (SQLException sqlExcept) {
+                    sqlExcept.printStackTrace();
+                }
+            }
+            titleTable.getItems().setAll(getTitles());
+            titleTitleText.setText("");
+            titlePriceText.setText("");
+            titleNotesText.setText("");
+        }
+    }
+
+    @FXML
     void handleEditCustomer(ActionEvent event) {
         if (customerTable.getSelectionModel().getSelectedItem() == null) {
             AlertBox.display("Confirm Edit", "Please select a customer.");
@@ -278,4 +354,40 @@ public class Controller implements Initializable {
             }
         }
     }
+
+    @FXML
+    void handleEditTitle(ActionEvent event) {
+        if (titleTable.getSelectionModel().getSelectedItem() == null) {
+            AlertBox.display("Confirm Edit", "Please select a title.");
+        }
+        else {
+            try {
+                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("EditTitleBox.fxml"));
+                Parent root = fxmlLoader.load();
+
+                EditTitleController editTitleController = fxmlLoader.getController();
+                editTitleController.setConnection(conn);
+                editTitleController.setTitle(titleTable.getSelectionModel().getSelectedItem());
+
+                Stage window = new Stage();
+                window.initModality(Modality.APPLICATION_MODAL);
+                window.setTitle("Edit Title");
+                window.setResizable(false);
+                window.setHeight(250);
+                window.setWidth(400);
+                window.setScene(new Scene(root));
+                window.setOnHidden(e -> {
+                    titleTable.getItems().setAll(getTitles());
+                    titleTitleText.setText("");
+                    titlePriceText.setText("");
+                    titleNotesText.setText("");
+                });
+                window.show();
+            } catch (Exception e) {
+                System.out.println("Error when opening window. This is probably a bug");
+                e.printStackTrace();
+            }
+        }
+    }
 }
+
