@@ -75,7 +75,7 @@
                               </TableView>
                               <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0">
                                  <children>
-                                    <Button mnemonicParsing="false" prefWidth="100.0" text="Add Request" wrapText="true">
+                                     <Button fx:id="NewOrder" mnemonicParsing="false" onAction="#handleNewOrder" prefWidth="100.0" text="Add Request" wrapText="true">
                                        <VBox.margin>
                                           <Insets bottom="30.0" top="10.0" />
                                        </VBox.margin>

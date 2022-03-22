@@ -185,7 +185,7 @@ public class Controller implements Initializable {
 
     private void createConnection() {
         try {
-            conn = DriverManager.getConnection("jdbc:derby:/home/logan/School/Capstone/derbyDB;");
+            conn = DriverManager.getConnection("jdbc:derby:C:/Apache/derbyDB;");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -389,5 +389,43 @@ public class Controller implements Initializable {
             }
         }
     }
+
+    @FXML
+    void handleNewOrder(ActionEvent event) {
+        if (customerTable.getSelectionModel().getSelectedItem() == null) {
+            AlertBox.display("New Order", "Please select a customer.");
+        }
+        else {
+            try {
+                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("AddOrderBox.fxml"));
+                Parent root = fxmlLoader.load();
+
+                NewOrderController newOrderController = fxmlLoader.getController();
+                newOrderController.setConnection(conn);
+                newOrderController.setCustomerID(customerTable.getSelectionModel().getSelectedItem().getId());
+
+                Stage window = new Stage();
+                window.initModality(Modality.APPLICATION_MODAL);
+                window.setTitle("Edit Customer");
+                window.setResizable(false);
+                window.setHeight(250);
+                window.setWidth(400);
+                window.setScene(new Scene(root));
+                window.setOnHidden(e -> {
+                    customerTable.getItems().setAll(getCustomers());
+                    customerFirstNameText.setText("");
+                    customerLastNameText.setText("");
+                    customerPhoneText.setText("");
+                    customerEmailText.setText("");
+                });
+                window.show();
+            } catch (Exception e) {
+                System.out.println("Error when opening window. This is probably a bug");
+                e.printStackTrace();
+            }
+        }
+    }
+
+
 }
 

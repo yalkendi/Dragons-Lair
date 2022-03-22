@@ -27,9 +27,11 @@ public class NewTitleController{
         String sql = "INSERT INTO Titles (TITLE, PRICE, NOTES) VALUES (?, ?, ?)";
         try
         {
+
+
             s = conn.prepareStatement(sql);
             s.setString(1, title);
-            s.setString(2, price);
+            s.setString(2, dollarsToCents(price));
             s.setString(3, notes);
             int rowsAffected = s.executeUpdate();
 
@@ -48,6 +50,14 @@ public class NewTitleController{
         Stage window = (Stage) addTitleButton.getScene().getWindow();
         window.close();
     }
+
+    private String dollarsToCents(String priceDollars) {
+        priceDollars = priceDollars.replace(".", "");
+        priceDollars = priceDollars.replaceAll(",", "");
+        System.out.println(priceDollars);
+        return priceDollars;
+    }
+
 
     public void setConnection(Connection conn) {
         this.conn = conn;
