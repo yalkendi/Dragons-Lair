@@ -83,7 +83,7 @@
                                           <Font size="11.0" />
                                        </font>
                                     </Button>
-                                    <Button mnemonicParsing="false" prefWidth="100.0" text="Edit/Delete Selected" wrapText="true">
+                                    <Button mnemonicParsing="false" prefWidth="100.0" text="Edit/Delete Selected" onAction="#handleDeleteOrder" wrapText="true">
                                        <font>
                                           <Font size="11.0" />
                                        </font>

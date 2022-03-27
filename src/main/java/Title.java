@@ -52,4 +52,10 @@ public class Title {
     public void setNotes(String notes) {
         this.notes = notes;
     }
+
+    // Helps with showing the Title object name in the orders table
+    @Override
+    public String toString() {
+        return this.getTitle();
+    }
 }

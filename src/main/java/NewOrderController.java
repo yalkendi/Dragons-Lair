@@ -1,3 +1,5 @@
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -5,45 +7,41 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
 
 public class NewOrderController {
 
     private Connection conn;
-    private Order order;
     private int customerId;
 
     @FXML private Button addOrderButton;
-
-
-    //@FXML private TextField setTitle;
-    @FXML private ComboBox<String> setTitle;
+    @FXML private ComboBox<Title> setTitle;
     @FXML private TextField setQuantity;
     @FXML private TextField setIssue;
 
+    private ObservableList<Title> titles  = FXCollections.observableArrayList();
+
+
     @FXML
     void newOrder(ActionEvent event) {
-        String Title = String.valueOf(setTitle.getItems());
-        String Issue = setIssue.getText();
-        String Quantity = setQuantity.getText();
-        int customerId = this.customerId;
-
-
 
         PreparedStatement s = null;
         String sql = "INSERT INTO Orders (customerId, titleId, quantity, issue) VALUES (?, ?, ?, ?)";
 
+        int titleID = getChoice(setTitle);
+        String Issue = setIssue.getText();
+        String Quantity = setQuantity.getText();
+        int customerId = this.customerId;
 
         try
         {
             s = conn.prepareStatement(sql);
             s.setString(1, Integer.toString(customerId));
-            s.setString(2, Title);
+            s.setString(2, Integer.toString(titleID));
             s.setString(3, Quantity);
             s.setString(4, Issue);
-//            s.setString(5, Integer.toString(customer.getId()));
+
+
             int rowsAffected = s.executeUpdate();
 
             if (rowsAffected == 0) {
@@ -62,13 +60,28 @@ public class NewOrderController {
         window.close();
     }
 
+    public void setNewOrder(){
+        setTitle.setItems(this.titles);
+        setTitle.getSelectionModel().selectFirst();
+
+    }
+
     public void setConnection(Connection conn) {
         this.conn = conn;
     }
 
+    // for the main controller to pass the current selected customer
     public void setCustomerID(int id) {
         this.customerId = id;
     }
 
+    // Get a list of all available titles (used by Controller.j)
+    public void populate(ObservableList<Title> getTitles){
+        this.titles = getTitles;
+    }
 
+    //To pick an option from the drop down menu
+    public int getChoice(ComboBox<Title> setTitle ){
+        return setTitle.getValue().getId();
+    }
 }
