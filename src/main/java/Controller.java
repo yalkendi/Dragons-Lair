@@ -1,3 +1,4 @@
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -6,12 +7,15 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.util.Callback;
 
 import java.net.URL;
 import java.sql.*;
@@ -27,6 +31,7 @@ public class Controller implements Initializable {
     @FXML private TableColumn<Customer, String> customerPhoneColumn;
     @FXML private TableColumn<Customer, String> customerEmailColumn;
 
+    @FXML private TableColumn<Title, Boolean> titleFlaggedColumn;
     @FXML private TableColumn<Title, String> titleTitleColumn;
     @FXML private TableColumn<Title, String> titlePriceColumn;
     @FXML private TableColumn<Title, String> titleNotesColumn;
@@ -66,10 +71,18 @@ public class Controller implements Initializable {
         customerOrderTable.getItems().setAll(getOrders());
 
         //Populate columns for Title Table
+        titleFlaggedColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<Title, Boolean>, ObservableValue<Boolean>>() {
+            @Override
+            public ObservableValue<Boolean> call(TableColumn.CellDataFeatures<Title, Boolean> flaggedCellDataFeatures) {
+                return flaggedCellDataFeatures.getValue().flaggedProperty();
+            }
+        });
+        titleFlaggedColumn.setCellFactory(tc -> new CheckBoxTableCell<>());
         titleTitleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
         titlePriceColumn.setCellValueFactory(new PropertyValueFactory<>("priceDollars"));
         titleNotesColumn.setCellValueFactory(new PropertyValueFactory<>("notes"));
         titleTable.getItems().setAll(getTitles());
+
 
         //Add Listener for Customer table
         customerTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
@@ -140,7 +153,8 @@ public class Controller implements Initializable {
                 String title = results.getString(2);
                 int price= results.getInt(3);
                 String notes = results.getString(4);
-                titles.add(new Title(titleId, title, price, notes));
+                boolean flagged = results.getBoolean(5);
+                titles.add(new Title(titleId, title, price, notes, flagged));
             }
             results.close();
             s.close();
@@ -185,7 +199,7 @@ public class Controller implements Initializable {
 
     private void createConnection() {
         try {
-            conn = DriverManager.getConnection("jdbc:derby:/home/logan/School/Capstone/derbyDB;");
+            conn = DriverManager.getConnection("jdbc:derby:/Users/loganwood/School/Capstone/derbyDB;");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -388,6 +402,10 @@ public class Controller implements Initializable {
                 e.printStackTrace();
             }
         }
+    }
+    @FXML
+    void resetFlags() {
+        return;
     }
 }
 
