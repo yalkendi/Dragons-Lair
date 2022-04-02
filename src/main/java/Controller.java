@@ -19,7 +19,9 @@ import javafx.util.Callback;
 
 import java.net.URL;
 import java.sql.*;
+import java.text.DateFormat;
 import java.util.ResourceBundle;
+import java.util.Date;
 
 public class Controller implements Initializable {
 
@@ -199,7 +201,7 @@ public class Controller implements Initializable {
 
     private void createConnection() {
         try {
-            conn = DriverManager.getConnection("jdbc:derby:/Users/loganwood/School/Capstone/derbyDB;");
+            conn = DriverManager.getConnection("jdbc:derby:/home/logan/School/Capstone/derbyDB;");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -387,8 +389,8 @@ public class Controller implements Initializable {
                 window.initModality(Modality.APPLICATION_MODAL);
                 window.setTitle("Edit Title");
                 window.setResizable(false);
-                window.setHeight(250);
-                window.setWidth(400);
+                window.setHeight(300);
+                window.setWidth(307);
                 window.setScene(new Scene(root));
                 window.setOnHidden(e -> {
                     titleTable.getItems().setAll(getTitles());
@@ -404,7 +406,36 @@ public class Controller implements Initializable {
         }
     }
     @FXML
-    void resetFlags() {
+    void saveFlags() {
+
+        ObservableList<Title> titles = titleTable.getItems();
+        Date today = new Date();
+
+        for (int i = 0; i < titles.size(); i++) {
+            PreparedStatement s = null;
+            String sql = """
+                    UPDATE Titles
+                    SET FLAGGED = ?, DATE_FLAGGED = ?
+                    WHERE TITLEID = ?
+                    """;
+            try {
+                s = conn.prepareStatement(sql);
+                s.setString(1, Boolean.toString(titles.get(i).isFlagged()));
+                s.setString(2, DateFormat.getDateInstance().format(today));
+                s.setString(3, Integer.toString(titles.get(i).getId()));
+                int rowsAffected = s.executeUpdate();
+
+                if (rowsAffected == 0) {
+                    //TODO: Throw an error
+                } else if (rowsAffected > 1) {
+                    //TODO: Throw and error
+                }
+                s.close();
+            } catch (SQLException sqlExcept) {
+                sqlExcept.printStackTrace();
+            }
+        }
+
         return;
     }
 }
