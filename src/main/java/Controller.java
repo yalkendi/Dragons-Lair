@@ -2,14 +2,13 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.text.Text;
@@ -24,6 +23,8 @@ import java.util.ResourceBundle;
 import java.util.Date;
 
 public class Controller implements Initializable {
+
+    private boolean unsaved = false;
 
     @FXML private TableView<Customer> customerTable;
     @FXML private TableView<Order> customerOrderTable;
@@ -64,29 +65,24 @@ public class Controller implements Initializable {
         customerFirstNameColumn.setCellValueFactory(new PropertyValueFactory<>("firstName"));
         customerPhoneColumn.setCellValueFactory(new PropertyValueFactory<>("phone"));
         customerEmailColumn.setCellValueFactory(new PropertyValueFactory<>("email"));
-        customerTable.getItems().setAll(getCustomers());
+        customerTable.getItems().setAll(this.getCustomers());
 
         //Populate columns for Orders Table
         customerOrderReqItemsColumn.setCellValueFactory(new PropertyValueFactory<>("titleId"));
         customerOrderQuantityColumn.setCellValueFactory(new PropertyValueFactory<>("quantity"));
         customerOrderIssueColumn.setCellValueFactory(new PropertyValueFactory<>("issue"));
-        customerOrderTable.getItems().setAll(getOrders());
+        customerOrderTable.getItems().setAll(this.getOrders());
 
         //Populate columns for Title Table
-        titleFlaggedColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<Title, Boolean>, ObservableValue<Boolean>>() {
-            @Override
-            public ObservableValue<Boolean> call(TableColumn.CellDataFeatures<Title, Boolean> flaggedCellDataFeatures) {
-                return flaggedCellDataFeatures.getValue().flaggedProperty();
-            }
-        });
+        titleFlaggedColumn.setCellValueFactory(c -> c.getValue().flaggedProperty());
         titleFlaggedColumn.setCellFactory(tc -> new CheckBoxTableCell<>());
         titleTitleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
         titlePriceColumn.setCellValueFactory(new PropertyValueFactory<>("priceDollars"));
         titleNotesColumn.setCellValueFactory(new PropertyValueFactory<>("notes"));
-        titleTable.getItems().setAll(getTitles());
+        titleTable.getItems().setAll(this.getTitles());
 
 
-        //Add Listener for Customer table
+        //Add Listener for selected Customer
         customerTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
             if (newSelection != null) {
                 customerFirstNameText.setText(newSelection.getFirstName());
@@ -96,7 +92,7 @@ public class Controller implements Initializable {
             }
         });
 
-        //Add Listener for Titles table
+        //Add Listener for selected Title
         titleTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
             if (newSelection != null) {
                 titleTitleText.setText(newSelection.getTitle());
@@ -105,6 +101,12 @@ public class Controller implements Initializable {
             }
         });
 
+        //Add Listener for New Release Flags
+//        for (Title title : getTitles()) {
+//            title.flaggedProperty().addListener((obs, wasFlagged, isFlagged) -> {
+//                this.unsaved = true;
+//            });
+//        }
     }
 
     //Get all Customers
@@ -147,7 +149,7 @@ public class Controller implements Initializable {
         try
         {
             s = conn.createStatement();
-            ResultSet results = s.executeQuery("select * from Titles");
+            ResultSet results = s.executeQuery("select * from Titles order by TITLE");
 
             while(results.next())
             {
@@ -164,6 +166,12 @@ public class Controller implements Initializable {
         catch (SQLException sqlExcept)
         {
             sqlExcept.printStackTrace();
+        }
+
+        for (Title t : titles) {
+            t.flaggedProperty().addListener((obs, wasFlagged, isFlagged) -> {
+                this.unsaved = true;
+            });
         }
 
         return titles;
@@ -201,7 +209,7 @@ public class Controller implements Initializable {
 
     private void createConnection() {
         try {
-            conn = DriverManager.getConnection("jdbc:derby:/home/logan/School/Capstone/derbyDB;");
+            conn = DriverManager.getConnection("jdbc:derby:/Users/loganwood/School/Capstone/derbyDB;");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -411,6 +419,15 @@ public class Controller implements Initializable {
         ObservableList<Title> titles = titleTable.getItems();
         Date today = new Date();
 
+        Alert savingAlert = new Alert(Alert.AlertType.INFORMATION, "Saving New Release Flags...", ButtonType.OK);
+
+        savingAlert.setTitle("Saving");
+        savingAlert.setHeaderText("");
+        savingAlert.setContentText("Saving New Release Flags...");
+        savingAlert.getDialogPane().lookupButton(ButtonType.OK).setDisable(true);
+        savingAlert.getDialogPane().getScene().getWindow().setOnCloseRequest(Event::consume);
+        savingAlert.show();
+
         for (int i = 0; i < titles.size(); i++) {
             PreparedStatement s = null;
             String sql = """
@@ -423,20 +440,47 @@ public class Controller implements Initializable {
                 s.setString(1, Boolean.toString(titles.get(i).isFlagged()));
                 s.setString(2, DateFormat.getDateInstance().format(today));
                 s.setString(3, Integer.toString(titles.get(i).getId()));
-                int rowsAffected = s.executeUpdate();
-
-                if (rowsAffected == 0) {
-                    //TODO: Throw an error
-                } else if (rowsAffected > 1) {
-                    //TODO: Throw and error
-                }
+                s.executeUpdate();
                 s.close();
             } catch (SQLException sqlExcept) {
                 sqlExcept.printStackTrace();
             }
         }
 
-        return;
+        savingAlert.close();
+
+        Alert savedAlert = new Alert(Alert.AlertType.INFORMATION, "Saved Flags!", ButtonType.OK);
+        savedAlert.setHeaderText("");
+        savedAlert.show();
+        this.unsaved = false;
+    }
+
+    @FXML
+    void resetFlags() {
+        Alert resetAlert = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to reset all flags?" +
+                " This cannot be undone.");
+        resetAlert.showAndWait()
+                .filter(response -> response == ButtonType.OK)
+                .ifPresent(response -> {
+                    PreparedStatement s = null;
+                    String sql = """
+                                UPDATE Titles
+                                SET FLAGGED = FALSE
+                                """;
+                    try {
+                        s = conn.prepareStatement(sql);
+                        s.executeUpdate();
+                        s.close();
+                    } catch (SQLException sqlExcept) {
+                        sqlExcept.printStackTrace();
+                    }
+                    titleTable.getItems().setAll(getTitles());
+                });
+        this.unsaved = false;
+    }
+
+    public boolean isUnsaved() {
+        return unsaved;
     }
 }
 
