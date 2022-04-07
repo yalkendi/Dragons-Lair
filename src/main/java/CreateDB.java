@@ -22,7 +22,9 @@ public class CreateDB {
             String dbName = "derbyDB";
             //NOTE: This is the install location of the database, hardcoding to work on my machine now.
             //We will need to change this in the future.
+
             conn = DriverManager.getConnection("jdbc:derby:C:/Apache/derbyDB;create=true");
+
             System.out.println("Connected to db " + dbName);
             conn.setAutoCommit(false);
 

@@ -1,23 +1,30 @@
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.util.Callback;
 
 import java.net.URL;
 import java.sql.*;
+import java.text.DateFormat;
 import java.util.ResourceBundle;
+import java.util.Date;
 
 public class Controller implements Initializable {
+
+    private boolean unsaved = false;
 
     @FXML private TableView<Customer> customerTable;
     @FXML private TableView<OrderTable> customerOrderTable;
@@ -27,6 +34,7 @@ public class Controller implements Initializable {
     @FXML private TableColumn<Customer, String> customerPhoneColumn;
     @FXML private TableColumn<Customer, String> customerEmailColumn;
 
+    @FXML private TableColumn<Title, Boolean> titleFlaggedColumn;
     @FXML private TableColumn<Title, String> titleTitleColumn;
     @FXML private TableColumn<Title, String> titlePriceColumn;
     @FXML private TableColumn<Title, String> titleNotesColumn;
@@ -57,21 +65,25 @@ public class Controller implements Initializable {
         customerFirstNameColumn.setCellValueFactory(new PropertyValueFactory<>("firstName"));
         customerPhoneColumn.setCellValueFactory(new PropertyValueFactory<>("phone"));
         customerEmailColumn.setCellValueFactory(new PropertyValueFactory<>("email"));
-        customerTable.getItems().setAll(getCustomers());
+        customerTable.getItems().setAll(this.getCustomers());
 
         //Populate columns for Orders Table
         customerOrderReqItemsColumn.setCellValueFactory(new PropertyValueFactory<>("TitleName"));
         customerOrderQuantityColumn.setCellValueFactory(new PropertyValueFactory<>("quantity"));
-        customerOrderIssueColumn.setCellValueFactory(new PropertyValueFactory<>("issue"));
+        customerOrderIssueColumn.setCellValueFactory(new PropertyValueFactory<>("issue"))
+          
 //        customerOrderTable.getItems().setAll(getOrders());
-
+  
         //Populate columns for Title Table
+        titleFlaggedColumn.setCellValueFactory(c -> c.getValue().flaggedProperty());
+        titleFlaggedColumn.setCellFactory(tc -> new CheckBoxTableCell<>());
         titleTitleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
         titlePriceColumn.setCellValueFactory(new PropertyValueFactory<>("priceDollars"));
         titleNotesColumn.setCellValueFactory(new PropertyValueFactory<>("notes"));
-        titleTable.getItems().setAll(getTitles());
+        titleTable.getItems().setAll(this.getTitles());
 
-        //Add Listener for Customer table
+
+        //Add Listener for selected Customer
         customerTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
             if (newSelection != null) {
                 customerFirstNameText.setText(newSelection.getFirstName());
@@ -93,6 +105,21 @@ public class Controller implements Initializable {
             }
         });
 
+        //Add Listener for selected Title
+        titleTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            if (newSelection != null) {
+                titleTitleText.setText(newSelection.getTitle());
+                titlePriceText.setText(newSelection.getPriceDollars());
+                titleNotesText.setText(newSelection.getNotes());
+            }
+        });
+
+        //Add Listener for New Release Flags
+//        for (Title title : getTitles()) {
+//            title.flaggedProperty().addListener((obs, wasFlagged, isFlagged) -> {
+//                this.unsaved = true;
+//            });
+//        }
     }
 
     //Get all Customers
@@ -167,7 +194,7 @@ public class Controller implements Initializable {
         try
         {
             s = conn.createStatement();
-            ResultSet results = s.executeQuery("select * from Titles");
+            ResultSet results = s.executeQuery("select * from Titles order by TITLE");
 
             while(results.next())
             {
@@ -175,7 +202,9 @@ public class Controller implements Initializable {
                 String title = results.getString(2);
                 int price= results.getInt(3);
                 String notes = results.getString(4);
-                titles.add(new Title(titleId, title, price, notes));
+                boolean flagged = results.getBoolean(5);
+                titles.add(new Title(titleId, title, price, notes, flagged));
+
             }
             results.close();
             s.close();
@@ -183,6 +212,12 @@ public class Controller implements Initializable {
         catch (SQLException sqlExcept)
         {
             sqlExcept.printStackTrace();
+        }
+
+        for (Title t : titles) {
+            t.flaggedProperty().addListener((obs, wasFlagged, isFlagged) -> {
+                this.unsaved = true;
+            });
         }
 
         return titles;
@@ -220,7 +255,9 @@ public class Controller implements Initializable {
 
     private void createConnection() {
         try {
+
             conn = DriverManager.getConnection("jdbc:derby:C:/Apache/derbyDB;");
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -408,8 +445,10 @@ public class Controller implements Initializable {
                 window.initModality(Modality.APPLICATION_MODAL);
                 window.setTitle("Edit Title");
                 window.setResizable(false);
+
                 window.setHeight(250);
                 window.setWidth(400);
+
                 window.setScene(new Scene(root));
                 window.setOnHidden(e -> {
                     titleTable.getItems().setAll(getTitles());
@@ -510,6 +549,76 @@ public class Controller implements Initializable {
             updateOrdersTable(customerTable.getSelectionModel().getSelectedItem());
 
         }
+
+    @FXML
+    void saveFlags() {
+
+        ObservableList<Title> titles = titleTable.getItems();
+        Date today = new Date();
+
+        Alert savingAlert = new Alert(Alert.AlertType.INFORMATION, "Saving New Release Flags...", ButtonType.OK);
+
+        savingAlert.setTitle("Saving");
+        savingAlert.setHeaderText("");
+        savingAlert.setContentText("Saving New Release Flags...");
+        savingAlert.getDialogPane().lookupButton(ButtonType.OK).setDisable(true);
+        savingAlert.getDialogPane().getScene().getWindow().setOnCloseRequest(Event::consume);
+        savingAlert.show();
+
+        for (int i = 0; i < titles.size(); i++) {
+            PreparedStatement s = null;
+            String sql = """
+                    UPDATE Titles
+                    SET FLAGGED = ?, DATE_FLAGGED = ?
+                    WHERE TITLEID = ?
+                    """;
+            try {
+                s = conn.prepareStatement(sql);
+                s.setString(1, Boolean.toString(titles.get(i).isFlagged()));
+                s.setString(2, DateFormat.getDateInstance().format(today));
+                s.setString(3, Integer.toString(titles.get(i).getId()));
+                s.executeUpdate();
+                s.close();
+            } catch (SQLException sqlExcept) {
+                sqlExcept.printStackTrace();
+            }
+        }
+
+        savingAlert.close();
+
+        Alert savedAlert = new Alert(Alert.AlertType.INFORMATION, "Saved Flags!", ButtonType.OK);
+        savedAlert.setHeaderText("");
+        savedAlert.show();
+        this.unsaved = false;
+    }
+
+    @FXML
+    void resetFlags() {
+        Alert resetAlert = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to reset all flags?" +
+                " This cannot be undone.");
+        resetAlert.showAndWait()
+                .filter(response -> response == ButtonType.OK)
+                .ifPresent(response -> {
+                    PreparedStatement s = null;
+                    String sql = """
+                                UPDATE Titles
+                                SET FLAGGED = FALSE
+                                """;
+                    try {
+                        s = conn.prepareStatement(sql);
+                        s.executeUpdate();
+                        s.close();
+                    } catch (SQLException sqlExcept) {
+                        sqlExcept.printStackTrace();
+                    }
+                    titleTable.getItems().setAll(getTitles());
+                });
+        this.unsaved = false;
+    }
+
+    public boolean isUnsaved() {
+        return unsaved;
+
     }
 }
 

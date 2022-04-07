@@ -110,16 +110,17 @@
       <content>
         <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                <children>
-                  <TableView fx:id="titleTable" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="500.0" AnchorPane.topAnchor="50.0">
+                  <TableView fx:id="titleTable" editable="true" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="500.0" AnchorPane.topAnchor="50.0">
                     <columns>
-                      <TableColumn fx:id="titleTitleColumn" prefWidth="200.0" text="Title" />
-                      <TableColumn fx:id="titlePriceColumn" prefWidth="100.0" text="Price" />
-                        <TableColumn fx:id="titleNotesColumn" prefWidth="100.0" text="Notes" />
+                        <TableColumn fx:id="titleFlaggedColumn" prefWidth="51.0" text="Flagged" />
+                      <TableColumn fx:id="titleTitleColumn" editable="false" prefWidth="224.0" text="Title" />
+                        <TableColumn fx:id="titleNotesColumn" editable="false" prefWidth="100.0" text="Notes" />
+                      <TableColumn fx:id="titlePriceColumn" editable="false" prefWidth="100.0" text="Price" />
                     </columns>
                   </TableView>
                   <Button fx:id="addTitleButton" mnemonicParsing="false" onAction="#handleAddTitle" text="Add New Title" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="10.0" />
-                  <Button mnemonicParsing="false" text="Reset New Release Flags" AnchorPane.leftAnchor="150.0" AnchorPane.topAnchor="10.0" />
-                  <Button mnemonicParsing="false" text="Import CSV" AnchorPane.leftAnchor="363.0" AnchorPane.topAnchor="10.0" />
+                  <Button fx:id="resetFlagsButton" mnemonicParsing="false" onAction="#resetFlags" text="Reset New Release Flags" AnchorPane.leftAnchor="220.0" AnchorPane.topAnchor="10.0" />
+                  <Button mnemonicParsing="false" text="Import CSV" AnchorPane.leftAnchor="410.0" AnchorPane.topAnchor="10.0" />
                   <VBox alignment="CENTER" layoutX="10.0" layoutY="10.0" prefHeight="749.0" prefWidth="476.0" spacing="10.0" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
                      <children>
                         <HBox alignment="CENTER" prefHeight="52.0" prefWidth="476.0" spacing="20.0">
@@ -168,6 +169,7 @@
                         </HBox>
                      </children>
                   </VBox>
+                  <Button fx:id="saveFlagsButton" mnemonicParsing="false" onAction="#saveFlags" text="Save Flags" AnchorPane.leftAnchor="125.0" AnchorPane.topAnchor="10.0" />
                </children></AnchorPane>
       </content>
     </Tab>
