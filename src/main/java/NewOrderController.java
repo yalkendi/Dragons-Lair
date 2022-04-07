@@ -15,11 +15,12 @@ public class NewOrderController {
     private int customerId;
 
     @FXML private Button addOrderButton;
-    @FXML private ComboBox<Title> setTitle;
+    @FXML private ComboBox<String> setTitle;
     @FXML private TextField setQuantity;
     @FXML private TextField setIssue;
 
     private ObservableList<Title> titles  = FXCollections.observableArrayList();
+    private ObservableList<String> titlesStr  = FXCollections.observableArrayList();
 
 
     @FXML
@@ -61,8 +62,10 @@ public class NewOrderController {
     }
 
     public void setNewOrder(){
-        setTitle.setItems(this.titles);
+        setTitle.setItems(this.titlesStr);
         setTitle.getSelectionModel().selectFirst();
+        setTitle.setEditable(true);
+        FxUtilTest.autoCompleteComboBoxPlus(setTitle, (typedText, itemToCompare) -> itemToCompare.toLowerCase().contains(typedText.toLowerCase()) || itemToCompare.equals(typedText));
 
     }
 
@@ -78,10 +81,20 @@ public class NewOrderController {
     // Get a list of all available titles (used by Controller.j)
     public void populate(ObservableList<Title> getTitles){
         this.titles = getTitles;
+        for(int i=0; i < titles.size(); i++){
+            titlesStr.add(titles.get(i).getTitle());
+        }
     }
 
     //To pick an option from the drop down menu
-    public int getChoice(ComboBox<Title> setTitle ){
-        return setTitle.getValue().getId();
+    public int getChoice(ComboBox<String> setTitle ){
+        String name = FxUtilTest.getComboBoxValue(setTitle);
+
+        for(int i=0; i < titles.size(); i++){
+            if (titles.get(i).getTitle().equals(name)){
+                return titles.get(i).getId();
+            }
+        }
+        return -1;
     }
 }

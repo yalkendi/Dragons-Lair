@@ -37,5 +37,4 @@ public class OrderTable {
         return this.issue;
     }
 
-
 }
