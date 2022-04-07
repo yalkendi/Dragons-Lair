@@ -27,7 +27,7 @@ public class Controller implements Initializable {
     private boolean unsaved = false;
 
     @FXML private TableView<Customer> customerTable;
-    @FXML private TableView<Order> customerOrderTable;
+    @FXML private TableView<OrderTable> customerOrderTable;
     @FXML private TableView<Title> titleTable;
     @FXML private TableColumn<Customer, String> customerLastNameColumn;
     @FXML private TableColumn<Customer, String> customerFirstNameColumn;
@@ -39,9 +39,9 @@ public class Controller implements Initializable {
     @FXML private TableColumn<Title, String> titlePriceColumn;
     @FXML private TableColumn<Title, String> titleNotesColumn;
 
-    @FXML private TableColumn<Title, String> customerOrderReqItemsColumn;
-    @FXML private TableColumn<Title, String> customerOrderQuantityColumn;
-    @FXML private TableColumn<Title, String> customerOrderIssueColumn;
+    @FXML private TableColumn<OrderTable, String> customerOrderReqItemsColumn;
+    @FXML private TableColumn<OrderTable, String> customerOrderQuantityColumn;
+    @FXML private TableColumn<OrderTable, String> customerOrderIssueColumn;
 
     @FXML private Text customerFirstNameText;
     @FXML private Text customerLastNameText;
@@ -68,11 +68,12 @@ public class Controller implements Initializable {
         customerTable.getItems().setAll(this.getCustomers());
 
         //Populate columns for Orders Table
-        customerOrderReqItemsColumn.setCellValueFactory(new PropertyValueFactory<>("titleId"));
+        customerOrderReqItemsColumn.setCellValueFactory(new PropertyValueFactory<>("TitleName"));
         customerOrderQuantityColumn.setCellValueFactory(new PropertyValueFactory<>("quantity"));
-        customerOrderIssueColumn.setCellValueFactory(new PropertyValueFactory<>("issue"));
-        customerOrderTable.getItems().setAll(this.getOrders());
-
+        customerOrderIssueColumn.setCellValueFactory(new PropertyValueFactory<>("issue"))
+          
+//        customerOrderTable.getItems().setAll(getOrders());
+  
         //Populate columns for Title Table
         titleFlaggedColumn.setCellValueFactory(c -> c.getValue().flaggedProperty());
         titleFlaggedColumn.setCellFactory(tc -> new CheckBoxTableCell<>());
@@ -89,6 +90,18 @@ public class Controller implements Initializable {
                 customerLastNameText.setText(newSelection.getLastName());
                 customerPhoneText.setText(newSelection.getPhone());
                 customerEmailText.setText(newSelection.getEmail());
+
+                updateOrdersTable(newSelection);
+
+            }
+        });
+
+        //Add Listener for Titles table
+        titleTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            if (newSelection != null) {
+                titleTitleText.setText(newSelection.getTitle());
+                titlePriceText.setText(newSelection.getPriceDollars());
+                titleNotesText.setText(newSelection.getNotes());
             }
         });
 
@@ -140,6 +153,38 @@ public class Controller implements Initializable {
         return customers;
     }
 
+
+    public ObservableList<OrderTable> getOrderTable() {
+        ObservableList<OrderTable> orders = FXCollections.observableArrayList();
+
+        Statement s = null;
+        try
+        {
+            s = conn.createStatement();
+            ResultSet results = s.executeQuery("SELECT ORDERS.CUSTOMERID, ORDERS.TITLEID, TITLES.title, ORDERS.QUANTITY, ORDERS.ISSUE FROM TITLES" +
+                    " INNER JOIN ORDERS ON Orders.titleID=TITLES.TitleId");
+
+            while(results.next())
+            {
+                int customerId = results.getInt(1);
+                int titleId = results.getInt(2);
+                String title = results.getString(3);
+                int quantity = results.getInt(4);
+                int issue = results.getInt(5);
+
+                orders.add(new OrderTable(customerId, titleId, title, quantity, issue));
+            }
+            results.close();
+            s.close();
+        }
+        catch (SQLException sqlExcept)
+        {
+            sqlExcept.printStackTrace();
+        }
+
+        return orders;
+    }
+
     //Get all Titles
     public ObservableList<Title> getTitles() {
 
@@ -159,6 +204,7 @@ public class Controller implements Initializable {
                 String notes = results.getString(4);
                 boolean flagged = results.getBoolean(5);
                 titles.add(new Title(titleId, title, price, notes, flagged));
+
             }
             results.close();
             s.close();
@@ -177,7 +223,7 @@ public class Controller implements Initializable {
         return titles;
     }
 
-    //Get all Orders
+    //Get all Orders -- Replaced by getOrdersTable()
     public ObservableList<Order> getOrders() {
 
         ObservableList<Order> orders  = FXCollections.observableArrayList();
@@ -209,7 +255,9 @@ public class Controller implements Initializable {
 
     private void createConnection() {
         try {
-            conn = DriverManager.getConnection("jdbc:derby:/Users/loganwood/School/Capstone/derbyDB;");
+
+            conn = DriverManager.getConnection("jdbc:derby:C:/Apache/derbyDB;");
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -397,8 +445,10 @@ public class Controller implements Initializable {
                 window.initModality(Modality.APPLICATION_MODAL);
                 window.setTitle("Edit Title");
                 window.setResizable(false);
-                window.setHeight(300);
-                window.setWidth(307);
+
+                window.setHeight(250);
+                window.setWidth(400);
+
                 window.setScene(new Scene(root));
                 window.setOnHidden(e -> {
                     titleTable.getItems().setAll(getTitles());
@@ -413,6 +463,93 @@ public class Controller implements Initializable {
             }
         }
     }
+
+    @FXML
+    void handleNewOrder(ActionEvent event) {
+        if (customerTable.getSelectionModel().getSelectedItem() == null) {
+            AlertBox.display("New Order", "Please select a customer.");
+        }
+        else {
+            try {
+                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("AddOrderBox.fxml"));
+                Parent root = fxmlLoader.load();
+
+                NewOrderController newOrderController = fxmlLoader.getController();
+                newOrderController.setConnection(conn);
+                newOrderController.setCustomerID(customerTable.getSelectionModel().getSelectedItem().getId());
+                newOrderController.populate(this.getTitles());
+                newOrderController.setNewOrder();
+
+                Stage window = new Stage();
+                window.initModality(Modality.APPLICATION_MODAL);
+                window.setTitle("New Order");
+                window.setResizable(false);
+                window.setHeight(250);
+                window.setWidth(400);
+                window.setScene(new Scene(root));
+                window.setOnHidden(e -> updateOrdersTable(customerTable.getSelectionModel().getSelectedItem()));
+                window.show();
+            } catch (Exception e) {
+                System.out.println("Error when opening window. This is probably a bug");
+                e.printStackTrace();
+            }
+        }
+    }
+
+    void updateOrdersTable(Customer customer){
+        ObservableList<OrderTable> allOrders = getOrderTable();
+        ObservableList<OrderTable> customerOrders = FXCollections.observableArrayList();
+        for(int i=0; i < allOrders.size(); i++) {
+            if (allOrders.get(i).getCustomerId() == customer.getId())
+                customerOrders.add(allOrders.get(i));
+        }
+        customerOrderTable.getItems().setAll(customerOrders);
+    }
+
+    @FXML
+    void handleDeleteOrder(ActionEvent event) {
+        String title = titleTitleText.getText();
+
+        if (customerOrderTable.getSelectionModel().getSelectedItem() == null) {
+            AlertBox.display("Confirm Delete", "Please select an order.");
+        } else {
+            int customerId = customerOrderTable.getSelectionModel().getSelectedItem().getCustomerId();
+            int titleId = customerOrderTable.getSelectionModel().getSelectedItem().getTitleId();
+            int quantity = customerOrderTable.getSelectionModel().getSelectedItem().getQuantity();
+            int issue = customerOrderTable.getSelectionModel().getSelectedItem().getIssue();
+
+
+            boolean confirmDelete = ConfirmBox.display(
+                    "Confirm Delete",
+                    "Are you sure you would like to delete " + title + "?");
+            if (confirmDelete) {
+                PreparedStatement s = null;
+                String sql = "DELETE FROM ORDERS WHERE CUSTOMERID = ? AND TITLEID = ? AND QUANTITY = ? AND ISSUE = ?";
+                try {
+                    s = conn.prepareStatement(sql);
+                    s.setString(1, Integer.toString(customerId));
+                    s.setString(2, Integer.toString(titleId));
+                    s.setString(3, Integer.toString(quantity));
+                    s.setString(4, Integer.toString(issue));
+
+
+                    int rowsAffected = s.executeUpdate();
+
+                    if (rowsAffected == 0) {
+                        //TODO: Throw an error
+                    } else if (rowsAffected > 1) {
+                        //TODO: Throw and error
+                    }
+                    s.close();
+                } catch (SQLException sqlExcept) {
+                    sqlExcept.printStackTrace();
+                }
+            }
+            titleTable.getItems().setAll(getTitles());
+            updateOrdersTable(customerTable.getSelectionModel().getSelectedItem());
+
+        }
+
     @FXML
     void saveFlags() {
 
@@ -481,6 +618,7 @@ public class Controller implements Initializable {
 
     public boolean isUnsaved() {
         return unsaved;
+
     }
 }
 

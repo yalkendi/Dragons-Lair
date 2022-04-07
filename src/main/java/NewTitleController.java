@@ -69,4 +69,8 @@ public class NewTitleController{
         System.out.println(priceDollars);
         return priceDollars;
     }
+
+    public void setConnection(Connection conn) {
+        this.conn = conn;
+    }
 }
