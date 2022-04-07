@@ -11,7 +11,16 @@ public class Customer {
         this.firstName = firstName;
         this.lastName = lastName;
         this.phone = phone;
-        this. email = email;
+        this.email = email;
+        this.fullName = lastName + ", " + firstName;
+    }
+
+    public Customer(int id, String firstName, String lastName, String phone, String email) {
+        this.id = id;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.phone = phone;
+        this.email = email;
         this.fullName = lastName + ", " + firstName;
     }
 
