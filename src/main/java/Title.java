@@ -1,15 +1,28 @@
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+
 public class Title {
 
     private String title;
     private int price;
     private String notes;
     private int id;
+    private BooleanProperty flagged;
 
     public Title(int id, String title, int price, String notes) {
         this.id = id;
         this.title = title;
         this.price = price;
         this.notes = notes;
+        this.flagged = new SimpleBooleanProperty(false);
+    }
+
+    public Title(int id, String title, int price, String notes, boolean flagged) {
+        this.id = id;
+        this.title = title;
+        this.price = price;
+        this.notes = notes;
+        this.flagged = new SimpleBooleanProperty(flagged);
     }
 
     public int getId() {
@@ -51,5 +64,16 @@ public class Title {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public BooleanProperty flaggedProperty() {
+        return flagged;
+    }
+    public boolean isFlagged() {
+        return this.flagged.get();
+    }
+
+    public void setFlagged(boolean flagged) {
+        this.flagged.set(flagged);
     }
 }

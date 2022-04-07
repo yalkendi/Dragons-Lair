@@ -1,6 +1,7 @@
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -19,15 +20,26 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("sample.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("sample.fxml"));
+        Parent root = fxmlLoader.load();
+        Controller controller = fxmlLoader.getController();
         window = primaryStage;
 
         Scene scene = new Scene(root, 1000, 700);
 
         window.setTitle("Pull List");
-        window.setOnCloseRequest(e -> {
-            e.consume();
-            closeProgram();
+        //Add handler for closing the window with unsaved flags
+        window.setOnCloseRequest(closeRequest -> {
+            System.out.println(controller.isUnsaved());
+            if (controller.isUnsaved()) {
+                Alert unsavedAlert = new Alert(Alert.AlertType.CONFIRMATION, "You have unsaved changes to flags. " +
+                        "Are you sure you want to exit?");
+                unsavedAlert.showAndWait()
+                        .filter(response -> response == ButtonType.CANCEL)
+                        .ifPresent(response -> {
+                            closeRequest.consume();
+                        });;
+            }
         });
 
         window.setScene(scene);
