@@ -23,7 +23,7 @@ public class CreateDB {
             //NOTE: This is the install location of the database, hardcoding to work on my machine now.
             //We will need to change this in the future.
 
-            conn = DriverManager.getConnection("jdbc:derby:C:/Apache/derbyDB;create=true");
+            conn = DriverManager.getConnection("jdbc:derby:/Users/loganwood/School/Capstone/derbyDB;create=true");
 
             System.out.println("Connected to db " + dbName);
             conn.setAutoCommit(false);
@@ -47,6 +47,8 @@ public class CreateDB {
                         Title varchar(255),
                         Price int,
                         Notes varchar(8000),
+                        FLAGGED boolean default false not null,
+                        DATE_FLAGGED date
                         PRIMARY KEY (TitleID)
                     )""");
             System.out.println("Created table Title");

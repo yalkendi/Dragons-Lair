@@ -70,7 +70,7 @@ public class Controller implements Initializable {
         //Populate columns for Orders Table
         customerOrderReqItemsColumn.setCellValueFactory(new PropertyValueFactory<>("TitleName"));
         customerOrderQuantityColumn.setCellValueFactory(new PropertyValueFactory<>("quantity"));
-        customerOrderIssueColumn.setCellValueFactory(new PropertyValueFactory<>("issue"))
+        customerOrderIssueColumn.setCellValueFactory(new PropertyValueFactory<>("issue"));
           
 //        customerOrderTable.getItems().setAll(getOrders());
   
@@ -113,13 +113,6 @@ public class Controller implements Initializable {
                 titleNotesText.setText(newSelection.getNotes());
             }
         });
-
-        //Add Listener for New Release Flags
-//        for (Title title : getTitles()) {
-//            title.flaggedProperty().addListener((obs, wasFlagged, isFlagged) -> {
-//                this.unsaved = true;
-//            });
-//        }
     }
 
     //Get all Customers
@@ -256,7 +249,7 @@ public class Controller implements Initializable {
     private void createConnection() {
         try {
 
-            conn = DriverManager.getConnection("jdbc:derby:C:/Apache/derbyDB;");
+            conn = DriverManager.getConnection("jdbc:derby:/Users/loganwood/School/Capstone/derbyDB;");
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -295,7 +288,7 @@ public class Controller implements Initializable {
             Parent root = fxmlLoader.load();
 
             NewTitleController newTitleController = fxmlLoader.getController();
-            newTitleController.setConnection(conn);
+            newTitleController.setConnection(this.conn);
 
             Stage window = new Stage();
             window.initModality(Modality.APPLICATION_MODAL);
@@ -549,6 +542,7 @@ public class Controller implements Initializable {
             updateOrdersTable(customerTable.getSelectionModel().getSelectedItem());
 
         }
+    }
 
     @FXML
     void saveFlags() {

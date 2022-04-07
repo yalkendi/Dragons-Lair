@@ -50,10 +50,6 @@ public class NewTitleController{
         }
     }
 
-    public void setConnection(Connection conn) {
-        this.conn = conn;
-    }
-
     private boolean isValidPrice(String priceDollars) {
         if (priceDollars.equals("") || priceDollars.matches("^[0-9]{1,3}(?:,?[0-9]{3})*\\.[0-9]{2}$") ) {
             return true;
