@@ -54,7 +54,13 @@ public class Controller implements Initializable {
 
     private static Connection conn = null;
 
-    //This is where we load from our database
+    /**
+     * Initiializes the state of the application. Creates a connection to the database,
+     * loads all Customer, Title, and Order data, populates all tables, and creates
+     * listeners.
+     * @param location
+     * @param resources
+     */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
 
@@ -115,7 +121,10 @@ public class Controller implements Initializable {
         });
     }
 
-    //Get all Customers
+    /**
+     * Gets a list representing all Customers in the database
+     * @return An ObservableList of Customer objects
+     */
     public ObservableList<Customer> getCustomers() {
 
         ObservableList<Customer> customers = FXCollections.observableArrayList();
@@ -147,6 +156,10 @@ public class Controller implements Initializable {
     }
 
 
+    /**
+     * Gets a list representing all Orders in the database.
+     * @return An ObservableList of Order objects
+     */
     public ObservableList<OrderTable> getOrderTable() {
         ObservableList<OrderTable> orders = FXCollections.observableArrayList();
 
@@ -178,7 +191,10 @@ public class Controller implements Initializable {
         return orders;
     }
 
-    //Get all Titles
+    /**
+     * Gets a list representing all Titles in the database
+     * @return An ObeservableList of all Title objects
+     */
     public ObservableList<Title> getTitles() {
 
         ObservableList<Title> titles  = FXCollections.observableArrayList();
@@ -216,36 +232,9 @@ public class Controller implements Initializable {
         return titles;
     }
 
-    //Get all Orders -- Replaced by getOrdersTable()
-    public ObservableList<Order> getOrders() {
-
-        ObservableList<Order> orders  = FXCollections.observableArrayList();
-
-        Statement s = null;
-        try
-        {
-            s = conn.createStatement();
-            ResultSet results = s.executeQuery("select * from Orders");
-
-            while(results.next())
-            {
-                int customerId = results.getInt(1);
-                int titleId = results.getInt(2);
-                int issue = results.getInt(3);
-                int quantity = results.getInt(4);
-                orders.add(new Order(customerId, titleId, issue, quantity));
-            }
-            results.close();
-            s.close();
-        }
-        catch (SQLException sqlExcept)
-        {
-            sqlExcept.printStackTrace();
-        }
-
-        return orders;
-    }
-
+    /**
+     * Creates a connection to the database and sets the global conn variable.
+     */
     private void createConnection() {
         try {
 
@@ -256,6 +245,12 @@ public class Controller implements Initializable {
         }
     }
 
+    /**
+     * Runs when the Add Customer button is pressed. Creates a new window for
+     * the user to enter information and create a customer. Re-renders the
+     * Customer table on window close.
+     * @param event Event that triggered the method call.
+     */
     @FXML
     void handleAddCustomer(ActionEvent event) {
         try {
@@ -281,6 +276,12 @@ public class Controller implements Initializable {
         }
     }
 
+    /**
+     * Runs when the Add Title button is pressed. Creates a new window for
+     * the user to enter information and create a title. Re-renders the
+     * Title table on window close.
+     * @param event Event that triggered the method call.
+     */
     @FXML
     void handleAddTitle(ActionEvent event) {
         try {
@@ -306,6 +307,12 @@ public class Controller implements Initializable {
         }
     }
 
+    /**
+     * Runs when the Delete Customer button is pressed. Creates a dialog for the
+     * user to confirm deletion of the selected Customer. Re-renders the Customer
+     * table on window close.
+     * @param event Event that triggered the method call.
+     */
     @FXML
     void handleDeleteCustomer(ActionEvent event) {
         String firstName = customerFirstNameText.getText();
@@ -346,6 +353,12 @@ public class Controller implements Initializable {
         }
     }
 
+    /**
+     * Runs when the Delete Title button is pressed. Creates a dialog for the
+     * user to confirm deletion of the selected Title. Re-renders the Title
+     * table on window close.
+     * @param event Event that triggered the method call.
+     */
     @FXML
     void handleDeleteTitle(ActionEvent event) {
         String title = titleTitleText.getText();
@@ -384,6 +397,12 @@ public class Controller implements Initializable {
         }
     }
 
+    /**
+     * Runs when the Edit Customer button is pressed. Creates a new window for
+     * the user to enter information and edit a Customer. Re-renders the
+     * Customer table on window close.
+     * @param event Event that triggered the method call.
+     */
     @FXML
     void handleEditCustomer(ActionEvent event) {
         if (customerTable.getSelectionModel().getSelectedItem() == null) {
@@ -420,6 +439,12 @@ public class Controller implements Initializable {
         }
     }
 
+    /**
+     * Runs when the Edit Title button is pressed. Creates a new window for
+     * the user to enter information and edit a title. Re-renders the
+     * Title table on window close.
+     * @param event Event that triggered the method call.
+     */
     @FXML
     void handleEditTitle(ActionEvent event) {
         if (titleTable.getSelectionModel().getSelectedItem() == null) {
@@ -457,6 +482,12 @@ public class Controller implements Initializable {
         }
     }
 
+    /**
+     * Runs when the Add Request button is pressed. Creates a new window for
+     * the user to enter information and create an Order. Re-renders the
+     * Orders table on window close.
+     * @param event Event that triggered the method call.
+     */
     @FXML
     void handleNewOrder(ActionEvent event) {
         if (customerTable.getSelectionModel().getSelectedItem() == null) {
@@ -489,6 +520,10 @@ public class Controller implements Initializable {
         }
     }
 
+    /**
+     * Adds all orders for a given Customer to the Orders table.
+     * @param customer The Customer to update the Order Table for
+     */
     void updateOrdersTable(Customer customer){
         ObservableList<OrderTable> allOrders = getOrderTable();
         ObservableList<OrderTable> customerOrders = FXCollections.observableArrayList();
@@ -499,6 +534,12 @@ public class Controller implements Initializable {
         customerOrderTable.getItems().setAll(customerOrders);
     }
 
+    /**
+     * Runs when the Delete Request button is pressed. Creates a dialog for the
+     * user to confirm deletion of the selected Order. Re-renders the Order
+     * table on window close.
+     * @param event Event that triggered the method call.
+     */
     @FXML
     void handleDeleteOrder(ActionEvent event) {
         String title = titleTitleText.getText();
@@ -544,6 +585,9 @@ public class Controller implements Initializable {
         }
     }
 
+    /**
+     * Saves the current state and date of all New Release Flags to the database
+     */
     @FXML
     void saveFlags() {
 
@@ -586,6 +630,9 @@ public class Controller implements Initializable {
         this.unsaved = false;
     }
 
+    /**
+     * Sets the Flagged attribute of all Titles to false
+     */
     @FXML
     void resetFlags() {
         Alert resetAlert = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to reset all flags?" +
@@ -610,6 +657,11 @@ public class Controller implements Initializable {
         this.unsaved = false;
     }
 
+    /**
+     * Returns true or false based on if there are unsaved changes to New
+     * Release Flags or not.
+     * @return A boolean for whether or not there are unsaved changes
+     */
     public boolean isUnsaved() {
         return unsaved;
 

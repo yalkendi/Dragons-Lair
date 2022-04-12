@@ -7,10 +7,22 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
+/**
+ * ConfirmBox to display a window and get a yes or no answer from the user.
+ *
+ */
 public class ConfirmBox {
 
     static boolean answer;
 
+    /**
+     * Displays the title as the window title, and the message as text inside
+     * the window. Prompts the users for yes or no confirmation and returns
+     * their answer.
+     * @param title The title for the window
+     * @param message  The message to display in the window
+     * @return True or false depending on the user's selection
+     */
     public static boolean display(String title, String message) {
         Stage window = new Stage();
         window.initModality(Modality.APPLICATION_MODAL);
