@@ -5,11 +5,10 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 
-/*
-A helper class to auto-complete the Titles combobox when creating a new order
-This code is from stackoverflow
-https://stackoverflow.com/questions/19924852/autocomplete-combobox-in-javafx
-
+/**
+ * A helper class to auto-complete the Titles combobox when creating a new order
+ * This code is from stackoverflow
+ * https://stackoverflow.com/questions/19924852/autocomplete-combobox-in-javafx
  */
 public class FxUtilTest {
 

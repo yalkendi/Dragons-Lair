@@ -10,6 +10,10 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+/**
+ * Main class for the application. This class contains a main method which
+ * launches the application.
+ */
 public class Main extends Application {
 
     Stage window;
@@ -18,6 +22,12 @@ public class Main extends Application {
         launch(args);
     }
 
+    /**
+     * Startup code for the application. This loads the FXML and controller and
+     * creates the window to display it.
+     * @param primaryStage The primary stage for the application
+     * @throws Exception
+     */
     @Override
     public void start(Stage primaryStage) throws Exception {
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("sample.fxml"));
@@ -46,12 +56,5 @@ public class Main extends Application {
         window.setMinHeight(700);
         window.setMinWidth(1000);
         window.show();
-    }
-
-    private void closeProgram() {
-        boolean confirmClose = ConfirmBox.display("Confirm Exit", "Are you sure you would like to exit?");
-        if (confirmClose) {
-            window.close();
-        }
     }
 }
