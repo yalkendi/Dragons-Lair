@@ -6,12 +6,18 @@ import java.sql.Statement;
 
 import java.util.ArrayList;
 
+/**
+ * This class provides a way to create a database for the application.
+ */
 public class CreateDB {
     public static void main(String args[]) {
         new CreateDB().go();
         System.out.println("CreateDB finished.");
     }
 
+    /**
+     * Creates an embedded Apache Derby database with the specified schema.
+     */
     void go() {
         System.out.println("Creating embedded DB");
 
@@ -22,7 +28,9 @@ public class CreateDB {
             String dbName = "derbyDB";
             //NOTE: This is the install location of the database, hardcoding to work on my machine now.
             //We will need to change this in the future.
-            conn = DriverManager.getConnection("jdbc:derby:/home/logan/School/Capstone/derbyDB;create=true");
+
+            conn = DriverManager.getConnection("jdbc:derby:" + System.getProperty("user.home") + "/DragonSlayer/derbyDB;create=true");
+
             System.out.println("Connected to db " + dbName);
             conn.setAutoCommit(false);
 
@@ -45,6 +53,8 @@ public class CreateDB {
                         Title varchar(255),
                         Price int,
                         Notes varchar(8000),
+                        FLAGGED boolean default false not null,
+                        DATE_FLAGGED date
                         PRIMARY KEY (TitleID)
                     )""");
             System.out.println("Created table Title");

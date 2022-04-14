@@ -6,6 +6,11 @@ import javafx.stage.Stage;
 
 import java.sql.*;
 
+/**
+ * This Controller controls the Edit Customer window. It allows the window
+ * to get the text that is entered in the fields and save it in the
+ * database.
+ */
 public class EditCustomerController{
 
     private Connection conn;
@@ -18,6 +23,12 @@ public class EditCustomerController{
     @FXML private TextField updateCustomerLastName;
     @FXML private TextField updateCustomerPhone;
 
+    /**
+     * Updates the Customer that has been set for this Controller. Sets
+     * the values that have been entered in the text fields for the
+     * Customer in the database.
+     * @param event
+     */
     @FXML
     void updateCustomer(ActionEvent event) {
         String firstName = updateCustomerFirstName.getText();
@@ -58,10 +69,18 @@ public class EditCustomerController{
         window.close();
     }
 
+    /**
+     * Sets the connection for this controller
+     * @param conn The connection to set for this controller
+     */
     public void setConnection(Connection conn) {
         this.conn = conn;
     }
 
+    /**
+     * Sets the Customer to edit
+     * @param customer The customer that will be edited
+     */
     public void setCustomer(Customer customer) {
         this.customer = customer;
         updateCustomerFirstName.setText(customer.getFirstName());

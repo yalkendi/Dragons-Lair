@@ -1,3 +1,8 @@
+/**
+ * An Order relating a Title and a customer. Every order has a customer
+ * that is requesting it and a title that is to be requested. Every
+ * order must also have a specified quantity and issue #.
+ */
 public class Order {
 
     private int customerId;
@@ -35,4 +40,5 @@ public class Order {
     public void setIssue(int issue) {
         this.issue = issue;
     }
+
 }
