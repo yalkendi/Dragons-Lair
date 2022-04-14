@@ -52,6 +52,7 @@ public class Controller implements Initializable {
     @FXML private Text titlePriceText;
     @FXML private Text titleNotesText;
 
+    @FXML private Text numberRequestsText;
     private static Connection conn = null;
 
     /**
@@ -105,9 +106,12 @@ public class Controller implements Initializable {
         //Add Listener for Titles table
         titleTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
             if (newSelection != null) {
+                Title selectedTitle = newSelection;
                 titleTitleText.setText(newSelection.getTitle());
                 titlePriceText.setText(newSelection.getPriceDollars());
                 titleNotesText.setText(newSelection.getNotes());
+                String numberRequests = String.format("This Title Currently has %s Customer Requests", getNumberRequests(selectedTitle));
+                numberRequestsText.setText(numberRequests);
             }
         });
 
@@ -655,6 +659,33 @@ public class Controller implements Initializable {
                     titleTable.getItems().setAll(getTitles());
                 });
         this.unsaved = false;
+    }
+
+    private int getNumberRequests(Title title) {
+        int ordersCount = 0;
+        ResultSet result;
+        Statement s = null;
+        try
+        {
+            String sql = String.format("""
+                    SELECT COUNT(*) FROM ORDERS
+                    WHERE titleID = %s
+                    """, title.getId());
+
+            s = conn.createStatement();
+            result = s.executeQuery(sql);
+            while(result.next()) {
+                ordersCount = result.getInt(1);
+            }
+            result.close();
+            s.close();
+        }
+        catch (SQLException sqlExcept)
+        {
+            sqlExcept.printStackTrace();
+        }
+
+        return ordersCount;
     }
 
     /**

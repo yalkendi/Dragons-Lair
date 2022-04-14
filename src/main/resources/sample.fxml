@@ -83,7 +83,7 @@
                                           <Font size="11.0" />
                                        </font>
                                     </Button>
-                                    <Button mnemonicParsing="false" prefWidth="100.0" text="Edit/Delete Selected" onAction="#handleDeleteOrder" wrapText="true">
+                                    <Button mnemonicParsing="false" onAction="#handleDeleteOrder" prefWidth="100.0" text="Edit/Delete Selected" wrapText="true">
                                        <font>
                                           <Font size="11.0" />
                                        </font>
@@ -153,11 +153,14 @@
                               <Text fx:id="titlePriceText" strokeType="OUTSIDE" strokeWidth="0.0" GridPane.rowIndex="4" />
                               <Text fx:id="titleNotesText" strokeType="OUTSIDE" strokeWidth="0.0" GridPane.columnIndex="1" GridPane.rowIndex="4" />
                               <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Title Details" />
+                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Last Flagged:" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                              <Text fx:id="titleDateFlagged" strokeType="OUTSIDE" strokeWidth="0.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                              <Text fx:id="dateFlaggedNotice" fill="#de7d00" strokeType="OUTSIDE" strokeWidth="0.0" text="This Title Has Not Been Flagged in Over Six Months" visible="false" wrappingWidth="200.0" GridPane.columnIndex="1" />
                            </children>
                         </GridPane>
                         <HBox prefHeight="443.0" prefWidth="476.0" spacing="10.0">
                            <children>
-                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="This Title Currently has X Customer Requests" wrappingWidth="213.4580078125" />
+                              <Text fx:id="numberRequestsText" strokeType="OUTSIDE" strokeWidth="0.0" wrappingWidth="213.4580078125" />
                               <Button alignment="CENTER" contentDisplay="CENTER" mnemonicParsing="false" prefHeight="41.0" prefWidth="180.0" text="Export Single Title Request List" textAlignment="CENTER" wrapText="true" />
                            </children>
                            <VBox.margin>

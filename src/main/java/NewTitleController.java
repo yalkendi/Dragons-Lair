@@ -42,7 +42,7 @@ public class NewTitleController{
             try {
                 s = conn.prepareStatement(sql);
                 s.setString(1, title);
-                s.setString(2, dollarsToCents(price));
+                s.setObject(2, dollarsToCents(price), Types.INTEGER);
                 s.setString(3, notes);
                 int rowsAffected = s.executeUpdate();
 
@@ -80,6 +80,9 @@ public class NewTitleController{
      * @return An integer representing the number of cents
      */
     private String dollarsToCents(String priceDollars) {
+        if (priceDollars == "") {
+            return null;
+        }
         priceDollars = priceDollars.replace(".", "");
         priceDollars = priceDollars.replaceAll(",", "");
         System.out.println(priceDollars);
