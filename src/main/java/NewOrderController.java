@@ -9,6 +9,11 @@ import javafx.stage.Stage;
 
 import java.sql.*;
 
+/**
+ * This Controller controls the New Order window. It allows the window
+ * to get the text that is entered in the fields and save it in the
+ * database.
+ */
 public class NewOrderController {
 
     private Connection conn;
@@ -23,6 +28,11 @@ public class NewOrderController {
     private ObservableList<String> titlesStr  = FXCollections.observableArrayList();
 
 
+    /**
+     * Creates an order based on the fields and ComboBox and adds it
+     * to the database
+     * @param event Event that triggered this method
+     */
     @FXML
     void newOrder(ActionEvent event) {
 
@@ -61,6 +71,9 @@ public class NewOrderController {
         window.close();
     }
 
+    /**
+     * Populate the ComboBox with the titles in titlesStr
+     */
     public void setNewOrder(){
         setTitle.setItems(this.titlesStr);
         setTitle.getSelectionModel().selectFirst();
@@ -69,16 +82,26 @@ public class NewOrderController {
 
     }
 
+    /**
+     * Sets the connection for this controller
+     * @param conn the connection for this controller
+     */
     public void setConnection(Connection conn) {
         this.conn = conn;
     }
 
-    // for the main controller to pass the current selected customer
+    /**
+     * Sets the customer ID for this controller
+     * @param id ID of the customer to set
+     */
     public void setCustomerID(int id) {
         this.customerId = id;
     }
 
-    // Get a list of all available titles (used by Controller.j)
+    /**
+     * Populates titlesStr based off of an ObservableList of Titles
+     * @param getTitles ObservableList of Titles to add to titlesStr
+     */
     public void populate(ObservableList<Title> getTitles){
         this.titles = getTitles;
         for(int i=0; i < titles.size(); i++){
@@ -86,7 +109,12 @@ public class NewOrderController {
         }
     }
 
-    //To pick an option from the drop down menu
+
+    /**
+     * Gets the choice from the ComboBox
+     * @param setTitle ComboBox containing the title value
+     * @return the ID of the title selected
+     */
     public int getChoice(ComboBox<String> setTitle ){
         String name = FxUtilTest.getComboBoxValue(setTitle);
 

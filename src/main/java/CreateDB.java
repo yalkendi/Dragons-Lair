@@ -6,12 +6,18 @@ import java.sql.Statement;
 
 import java.util.ArrayList;
 
+/**
+ * This class provides a way to create a database for the application.
+ */
 public class CreateDB {
     public static void main(String args[]) {
         new CreateDB().go();
         System.out.println("CreateDB finished.");
     }
 
+    /**
+     * Creates an embedded Apache Derby database with the specified schema.
+     */
     void go() {
         System.out.println("Creating embedded DB");
 
