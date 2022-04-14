@@ -29,7 +29,7 @@ public class CreateDB {
             //NOTE: This is the install location of the database, hardcoding to work on my machine now.
             //We will need to change this in the future.
 
-            conn = DriverManager.getConnection("jdbc:derby:/Users/loganwood/School/Capstone/derbyDB;create=true");
+            conn = DriverManager.getConnection("jdbc:derby:" + System.getProperty("user.home") + "/DragonSlayer/derbyDB;create=true");
 
             System.out.println("Connected to db " + dbName);
             conn.setAutoCommit(false);

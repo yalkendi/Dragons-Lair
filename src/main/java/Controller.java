@@ -242,7 +242,7 @@ public class Controller implements Initializable {
     private void createConnection() {
         try {
 
-            conn = DriverManager.getConnection("jdbc:derby:/Users/loganwood/School/Capstone/derbyDB;");
+            conn = DriverManager.getConnection("jdbc:derby:" + System.getProperty("user.home") + "/DragonSlayer/derbyDB;");
 
         } catch (SQLException e) {
             e.printStackTrace();
