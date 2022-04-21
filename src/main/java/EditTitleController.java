@@ -52,7 +52,7 @@ public class EditTitleController{
                 s.setString(3, notes);
                 s.setString(4, Integer.toString(title.getId()));
                 int rowsAffected = s.executeUpdate();
-                System.out.println(rowsAffected);
+
                 if (rowsAffected == 0) {
                     //TODO: Throw an error
                 }

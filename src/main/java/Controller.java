@@ -1,3 +1,6 @@
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -13,6 +16,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.util.Callback;
 
 import java.net.URL;
 import java.sql.*;
@@ -79,16 +83,28 @@ public class Controller implements Initializable {
         //Populate columns for Orders Table
         customerOrderReqItemsColumn.setCellValueFactory(new PropertyValueFactory<>("TitleName"));
         customerOrderQuantityColumn.setCellValueFactory(new PropertyValueFactory<>("quantity"));
-        customerOrderIssueColumn.setCellValueFactory(new PropertyValueFactory<>("issue"));
+        customerOrderIssueColumn.setCellValueFactory(cell -> {
+            if (cell.getValue().getIssue() > 0) {
+                return new SimpleStringProperty(Integer.toString(cell.getValue().getIssue()));
+            } else {
+                return new SimpleStringProperty("");
+            }
+        });
 
         //Populate columns for Title Table
         titleFlaggedColumn.setCellValueFactory(c -> c.getValue().flaggedProperty());
         titleFlaggedColumn.setCellFactory(tc -> new CheckBoxTableCell<>());
         titleTitleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
         titlePriceColumn.setCellValueFactory(new PropertyValueFactory<>("priceDollars"));
+        titlePriceColumn.setCellValueFactory(cell -> {
+            if (cell.getValue().getPrice() > 0) {
+                return new SimpleStringProperty(cell.getValue().getPriceDollars());
+            } else {
+                return new SimpleStringProperty("");
+            }
+        });
         titleNotesColumn.setCellValueFactory(new PropertyValueFactory<>("notes"));
         titleTable.getItems().setAll(this.getTitles());
-
 
         //Add Listener for selected Customer
         customerTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
@@ -97,9 +113,7 @@ public class Controller implements Initializable {
                 customerLastNameText.setText(newSelection.getLastName());
                 customerPhoneText.setText(newSelection.getPhone());
                 customerEmailText.setText(newSelection.getEmail());
-
                 updateOrdersTable(newSelection);
-
             }
         });
 
@@ -109,17 +123,20 @@ public class Controller implements Initializable {
                 titleTitleText.setText(newSelection.getTitle());
                 titlePriceText.setText(newSelection.getPriceDollars());
                 titleNotesText.setText(newSelection.getNotes());
-                titleDateFlagged.setText(newSelection.getDateFlagged().toString());
                 String numberRequests = String.format("This Title Currently has %s Customer Requests", getNumberRequests(newSelection));
                 LocalDate sixMonthsAgo = LocalDate.now().minusMonths(6);
-                System.out.println(sixMonthsAgo);
-                System.out.println(newSelection.getDateFlagged());
-                System.out.println(newSelection.getDateFlagged().isBefore(sixMonthsAgo));
-                if (newSelection.getDateFlagged().isBefore(sixMonthsAgo)) {
-                    titleDateFlaggedNoticeText.setVisible(true);
+                if (newSelection.getDateFlagged() != null) {
+                    titleDateFlagged.setText(newSelection.getDateFlagged().toString());
+                    if (newSelection.getDateFlagged().isBefore(sixMonthsAgo)) {
+                        titleDateFlaggedNoticeText.setVisible(true);
+                    }
+                    else {
+                        titleDateFlaggedNoticeText.setVisible(false);
+                    }
                 }
                 else {
-                    titleDateFlaggedNoticeText.setVisible(false);
+                    titleDateFlagged.setText("Never");
+                    titleDateFlaggedNoticeText.setVisible(true);
                 }
                 titleNumberRequestsText.setText(numberRequests);
             }
@@ -218,9 +235,12 @@ public class Controller implements Initializable {
                 String notes = results.getString(4);
                 boolean flagged = results.getBoolean(5);
                 Date dateFlagged = results.getDate(6);
-                LocalDate dateFlaggedLocalDate = dateFlagged.toLocalDate();
-                titles.add(new Title(titleId, title, price, notes, flagged, dateFlaggedLocalDate));
-
+                if (dateFlagged != null) {
+                    titles.add(new Title(titleId, title, price, notes, flagged, dateFlagged.toLocalDate()));
+                }
+                else {
+                    titles.add(new Title(titleId, title, price, notes, flagged, null));
+                }
             }
             results.close();
             s.close();
@@ -302,7 +322,7 @@ public class Controller implements Initializable {
             window.initModality(Modality.APPLICATION_MODAL);
             window.setTitle("Add Title");
             window.setResizable(false);
-            window.setHeight(250);
+            window.setHeight(285);
             window.setWidth(400);
             window.setScene(new Scene(root));
             window.setOnHidden( e -> titleTable.getItems().setAll(getTitles()));
@@ -471,7 +491,7 @@ public class Controller implements Initializable {
                 window.setTitle("Edit Title");
                 window.setResizable(false);
 
-                window.setHeight(250);
+                window.setHeight(285);
                 window.setWidth(400);
 
                 window.setScene(new Scene(root));

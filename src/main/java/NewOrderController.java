@@ -5,6 +5,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 import java.sql.*;
@@ -24,6 +25,9 @@ public class NewOrderController {
     @FXML private TextField setQuantity;
     @FXML private TextField setIssue;
 
+    @FXML private Text orderTitleErrorText;
+    @FXML private Text orderQuantityErrorText;
+
     private ObservableList<Title> titles  = FXCollections.observableArrayList();
     private ObservableList<String> titlesStr  = FXCollections.observableArrayList();
 
@@ -38,34 +42,45 @@ public class NewOrderController {
 
         PreparedStatement s = null;
         String sql = "INSERT INTO Orders (customerId, titleId, quantity, issue) VALUES (?, ?, ?, ?)";
+        orderQuantityErrorText.setVisible(false);
+        orderTitleErrorText.setVisible(false);
 
-        int titleID = getChoice(setTitle);
-        String Issue = setIssue.getText();
-        String Quantity = setQuantity.getText();
-        int customerId = this.customerId;
-
-        try
-        {
-            s = conn.prepareStatement(sql);
-            s.setString(1, Integer.toString(customerId));
-            s.setString(2, Integer.toString(titleID));
-            s.setString(3, Quantity);
-            s.setString(4, Issue);
-
-
-            int rowsAffected = s.executeUpdate();
-
-            if (rowsAffected == 0) {
-                //TODO: Throw an error
-            }
-            else if (rowsAffected > 1) {
-                //TODO: Throw an error
-            }
-            s.close();
+        if (getChoice(setTitle) == -1) {
+            orderTitleErrorText.setVisible(true);
+            return;
         }
-        catch (SQLException sqlExcept)
-        {
-            sqlExcept.printStackTrace();
+        else if (setQuantity.getText().equals("")) {
+            orderQuantityErrorText.setVisible(true);
+            return;
+        }
+        else {
+            int titleID = getChoice(setTitle);
+            String issue = setIssue.getText();
+            if (issue == "") {
+                issue = null;
+            }
+            String quantity = setQuantity.getText();
+            int customerId = this.customerId;
+
+            try {
+                s = conn.prepareStatement(sql);
+                s.setString(1, Integer.toString(customerId));
+                s.setString(2, Integer.toString(titleID));
+                s.setString(3, quantity);
+                s.setObject(4, issue, Types.INTEGER);
+
+
+                int rowsAffected = s.executeUpdate();
+
+                if (rowsAffected == 0) {
+                    //TODO: Throw an error
+                } else if (rowsAffected > 1) {
+                    //TODO: Throw an error
+                }
+                s.close();
+            } catch (SQLException sqlExcept) {
+                sqlExcept.printStackTrace();
+            }
         }
         Stage window = (Stage) addOrderButton.getScene().getWindow();
         window.close();
