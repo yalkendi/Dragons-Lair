@@ -17,9 +17,21 @@ import javafx.stage.Stage;
 public class Main extends Application {
 
     Stage window;
+    Properties properties = new Properties();
 
     public static void main(String[] args) {
         launch(args);
+    }
+
+    /**
+     * Performs application preflight before launching. This is primarily checking for the existance 
+     * of the application database and if it doesn't find one, it creates a blank database. The location
+     * of this database is specified in a config file located in the user's home directory. If a config 
+     * file does not exist, it creates a reasonable default.
+     * @throws Exception
+     */
+    @Override
+    public void init() throws Exception {
     }
 
     /**

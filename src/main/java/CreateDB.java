@@ -26,8 +26,6 @@ public class CreateDB {
 
         try {
             String dbName = "derbyDB";
-            //NOTE: This is the install location of the database, hardcoding to work on my machine now.
-            //We will need to change this in the future.
 
             conn = DriverManager.getConnection("jdbc:derby:" + System.getProperty("user.home") + "/DragonSlayer/derbyDB;create=true");
 
