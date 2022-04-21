@@ -1,4 +1,3 @@
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -14,20 +13,21 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.util.Callback;
 
 import java.net.URL;
 import java.sql.*;
 import java.text.DateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ResourceBundle;
-import java.util.Date;
 
 public class Controller implements Initializable {
 
     private boolean unsaved = false;
 
     @FXML private TableView<Customer> customerTable;
-    @FXML private TableView<OrderTable> customerOrderTable;
+    @FXML private TableView<Order> customerOrderTable;
     @FXML private TableView<Title> titleTable;
     @FXML private TableColumn<Customer, String> customerLastNameColumn;
     @FXML private TableColumn<Customer, String> customerFirstNameColumn;
@@ -39,9 +39,9 @@ public class Controller implements Initializable {
     @FXML private TableColumn<Title, String> titlePriceColumn;
     @FXML private TableColumn<Title, String> titleNotesColumn;
 
-    @FXML private TableColumn<OrderTable, String> customerOrderReqItemsColumn;
-    @FXML private TableColumn<OrderTable, String> customerOrderQuantityColumn;
-    @FXML private TableColumn<OrderTable, String> customerOrderIssueColumn;
+    @FXML private TableColumn<Order, String> customerOrderReqItemsColumn;
+    @FXML private TableColumn<Order, String> customerOrderQuantityColumn;
+    @FXML private TableColumn<Order, String> customerOrderIssueColumn;
 
     @FXML private Text customerFirstNameText;
     @FXML private Text customerLastNameText;
@@ -51,8 +51,10 @@ public class Controller implements Initializable {
     @FXML private Text titleTitleText;
     @FXML private Text titlePriceText;
     @FXML private Text titleNotesText;
+    @FXML private Text titleDateFlagged;
+    @FXML private Text titleDateFlaggedNoticeText;
+    @FXML private Text titleNumberRequestsText;
 
-    @FXML private Text numberRequestsText;
     private static Connection conn = null;
 
     /**
@@ -78,9 +80,7 @@ public class Controller implements Initializable {
         customerOrderReqItemsColumn.setCellValueFactory(new PropertyValueFactory<>("TitleName"));
         customerOrderQuantityColumn.setCellValueFactory(new PropertyValueFactory<>("quantity"));
         customerOrderIssueColumn.setCellValueFactory(new PropertyValueFactory<>("issue"));
-          
-//        customerOrderTable.getItems().setAll(getOrders());
-  
+
         //Populate columns for Title Table
         titleFlaggedColumn.setCellValueFactory(c -> c.getValue().flaggedProperty());
         titleFlaggedColumn.setCellFactory(tc -> new CheckBoxTableCell<>());
@@ -106,21 +106,22 @@ public class Controller implements Initializable {
         //Add Listener for Titles table
         titleTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
             if (newSelection != null) {
-                Title selectedTitle = newSelection;
                 titleTitleText.setText(newSelection.getTitle());
                 titlePriceText.setText(newSelection.getPriceDollars());
                 titleNotesText.setText(newSelection.getNotes());
-                String numberRequests = String.format("This Title Currently has %s Customer Requests", getNumberRequests(selectedTitle));
-                numberRequestsText.setText(numberRequests);
-            }
-        });
-
-        //Add Listener for selected Title
-        titleTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
-            if (newSelection != null) {
-                titleTitleText.setText(newSelection.getTitle());
-                titlePriceText.setText(newSelection.getPriceDollars());
-                titleNotesText.setText(newSelection.getNotes());
+                titleDateFlagged.setText(newSelection.getDateFlagged().toString());
+                String numberRequests = String.format("This Title Currently has %s Customer Requests", getNumberRequests(newSelection));
+                LocalDate sixMonthsAgo = LocalDate.now().minusMonths(6);
+                System.out.println(sixMonthsAgo);
+                System.out.println(newSelection.getDateFlagged());
+                System.out.println(newSelection.getDateFlagged().isBefore(sixMonthsAgo));
+                if (newSelection.getDateFlagged().isBefore(sixMonthsAgo)) {
+                    titleDateFlaggedNoticeText.setVisible(true);
+                }
+                else {
+                    titleDateFlaggedNoticeText.setVisible(false);
+                }
+                titleNumberRequestsText.setText(numberRequests);
             }
         });
     }
@@ -164,8 +165,8 @@ public class Controller implements Initializable {
      * Gets a list representing all Orders in the database.
      * @return An ObservableList of Order objects
      */
-    public ObservableList<OrderTable> getOrderTable() {
-        ObservableList<OrderTable> orders = FXCollections.observableArrayList();
+    public ObservableList<Order> getOrderTable() {
+        ObservableList<Order> orders = FXCollections.observableArrayList();
 
         Statement s = null;
         try
@@ -182,7 +183,7 @@ public class Controller implements Initializable {
                 int quantity = results.getInt(4);
                 int issue = results.getInt(5);
 
-                orders.add(new OrderTable(customerId, titleId, title, quantity, issue));
+                orders.add(new Order(customerId, titleId, title, quantity, issue));
             }
             results.close();
             s.close();
@@ -216,7 +217,9 @@ public class Controller implements Initializable {
                 int price= results.getInt(3);
                 String notes = results.getString(4);
                 boolean flagged = results.getBoolean(5);
-                titles.add(new Title(titleId, title, price, notes, flagged));
+                Date dateFlagged = results.getDate(6);
+                LocalDate dateFlaggedLocalDate = dateFlagged.toLocalDate();
+                titles.add(new Title(titleId, title, price, notes, flagged, dateFlaggedLocalDate));
 
             }
             results.close();
@@ -529,8 +532,8 @@ public class Controller implements Initializable {
      * @param customer The Customer to update the Order Table for
      */
     void updateOrdersTable(Customer customer){
-        ObservableList<OrderTable> allOrders = getOrderTable();
-        ObservableList<OrderTable> customerOrders = FXCollections.observableArrayList();
+        ObservableList<Order> allOrders = getOrderTable();
+        ObservableList<Order> customerOrders = FXCollections.observableArrayList();
         for(int i=0; i < allOrders.size(); i++) {
             if (allOrders.get(i).getCustomerId() == customer.getId())
                 customerOrders.add(allOrders.get(i));
@@ -596,7 +599,9 @@ public class Controller implements Initializable {
     void saveFlags() {
 
         ObservableList<Title> titles = titleTable.getItems();
-        Date today = new Date();
+        ZonedDateTime startOfToday = LocalDate.now().atStartOfDay(ZoneId.systemDefault());
+        long todayMillis = startOfToday.toEpochSecond() * 1000;
+        Date today = new Date(todayMillis);
 
         Alert savingAlert = new Alert(Alert.AlertType.INFORMATION, "Saving New Release Flags...", ButtonType.OK);
 
@@ -609,21 +614,40 @@ public class Controller implements Initializable {
 
         for (int i = 0; i < titles.size(); i++) {
             PreparedStatement s = null;
-            String sql = """
+            if (titles.get(i).isFlagged()) {
+                String sql = """
                     UPDATE Titles
                     SET FLAGGED = ?, DATE_FLAGGED = ?
                     WHERE TITLEID = ?
                     """;
-            try {
-                s = conn.prepareStatement(sql);
-                s.setString(1, Boolean.toString(titles.get(i).isFlagged()));
-                s.setString(2, DateFormat.getDateInstance().format(today));
-                s.setString(3, Integer.toString(titles.get(i).getId()));
-                s.executeUpdate();
-                s.close();
-            } catch (SQLException sqlExcept) {
-                sqlExcept.printStackTrace();
+                try {
+                    s = conn.prepareStatement(sql);
+                    s.setString(1, Boolean.toString(titles.get(i).isFlagged()));
+                    s.setString(2, DateFormat.getDateInstance().format(today));
+                    s.setString(3, Integer.toString(titles.get(i).getId()));
+                    s.executeUpdate();
+                    s.close();
+                } catch (SQLException sqlExcept) {
+                    sqlExcept.printStackTrace();
+                }
             }
+            else {
+                String sql = """
+                    UPDATE Titles
+                    SET FLAGGED = ?
+                    WHERE TITLEID = ?
+                    """;
+                try {
+                    s = conn.prepareStatement(sql);
+                    s.setString(1, Boolean.toString(titles.get(i).isFlagged()));
+                    s.setString(2, Integer.toString(titles.get(i).getId()));
+                    s.executeUpdate();
+                    s.close();
+                } catch (SQLException sqlExcept) {
+                    sqlExcept.printStackTrace();
+                }
+            }
+
         }
 
         savingAlert.close();
@@ -632,6 +656,7 @@ public class Controller implements Initializable {
         savedAlert.setHeaderText("");
         savedAlert.show();
         this.unsaved = false;
+        titleTable.getItems().setAll(getTitles());
     }
 
     /**
@@ -661,6 +686,11 @@ public class Controller implements Initializable {
         this.unsaved = false;
     }
 
+    /**
+     * Gets the number of Orders for a specified Title
+     * @param title The title to count orders for
+     * @return The number of orders
+     */
     private int getNumberRequests(Title title) {
         int ordersCount = 0;
         ResultSet result;

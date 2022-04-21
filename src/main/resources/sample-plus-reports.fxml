@@ -155,14 +155,11 @@
                               <Text fx:id="titlePriceText" strokeType="OUTSIDE" strokeWidth="0.0" GridPane.rowIndex="4" />
                               <Text fx:id="titleNotesText" strokeType="OUTSIDE" strokeWidth="0.0" GridPane.columnIndex="1" GridPane.rowIndex="4" />
                               <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Title Details" />
-                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Last Flagged:" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                              <Text fx:id="titleDateFlagged" strokeType="OUTSIDE" strokeWidth="0.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                              <Text fx:id="titleDateFlaggedNoticeText" fill="#de7d00" strokeType="OUTSIDE" strokeWidth="0.0" text="This Title Has Not Been Flagged in Over Six Months" visible="false" wrappingWidth="200.0" GridPane.columnIndex="1" />
                            </children>
                         </GridPane>
                         <HBox prefHeight="443.0" prefWidth="476.0" spacing="10.0">
                            <children>
-                              <Text fx:id="titleNumberRequestsText" strokeType="OUTSIDE" strokeWidth="0.0" wrappingWidth="213.4580078125" />
+                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="This Title Currently has X Customer Requests" wrappingWidth="213.4580078125" />
                               <Button alignment="CENTER" contentDisplay="CENTER" mnemonicParsing="false" prefHeight="41.0" prefWidth="180.0" text="Export Single Title Request List" textAlignment="CENTER" wrapText="true" />
                            </children>
                            <VBox.margin>
@@ -179,129 +176,129 @@
       </content>
     </Tab>
       <Tab text="Reports">
-          <content>
-              <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE">
-                  <tabs>
-                      <Tab text="New Week Pulls">
-                          <content>
-                              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
-                                  <children>
-                                      <HBox layoutX="11.0" layoutY="6.0" prefHeight="93.0" prefWidth="488.0">
-                                          <children>
-                                              <TextArea editable="false" prefHeight="93.0" prefWidth="230.0" text="X Titles Currently Flagged for X Customers&#10;X Titles Have Triggered Issue #'s&#10;X Titles Have No Customer Requests&#10;&#10;">
-                                                  <font>
-                                                      <Font name="System Bold" size="12.0" />
-                                                  </font>
-                                                  <HBox.margin>
-                                                      <Insets top="10.0" />
-                                                  </HBox.margin>
-                                              </TextArea>
-                                              <Button alignment="CENTER_RIGHT" mnemonicParsing="false" prefHeight="39.0" prefWidth="192.0" text="Export New Week Flags Customer Requests" textAlignment="CENTER" wrapText="true">
-                                                  <font>
-                                                      <Font size="12.0" />
-                                                  </font>
-                                                  <HBox.margin>
-                                                      <Insets bottom="5.0" left="30.0" right="5.0" top="20.0" />
-                                                  </HBox.margin>
-                                              </Button>
-                                          </children>
-                                      </HBox>
-                                      <TableView layoutY="105.0" prefHeight="524.0" prefWidth="490.0" AnchorPane.bottomAnchor="8.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="500.0" AnchorPane.topAnchor="105.0">
-                                          <columns>
-                                              <TableColumn prefWidth="75.0" text="Title" />
-                                              <TableColumn prefWidth="75.0" text="Issue #" />
-                                              <TableColumn prefWidth="75.0" text="Price" />
-                                              <TableColumn prefWidth="75.0" text="Quantity" />
-                                              <TableColumn prefWidth="158.0" text="Notes" />
-                                          </columns>
-                                      </TableView>
-                                      <VBox layoutX="509.0" layoutY="105.0" prefHeight="525.0" prefWidth="482.0">
-                                          <children>
-                                              <HBox alignment="CENTER_LEFT" prefHeight="104.0" prefWidth="482.0">
-                                                  <children>
-                                                      <TextArea editable="false" prefHeight="98.0" prefWidth="200.0" text="Customer requests for:&#10;Title, A&#10;Total Qty: X&#10;# of Customers: X&#10;">
-                                                          <HBox.margin>
-                                                              <Insets bottom="2.0" />
-                                                          </HBox.margin>
-                                                      </TextArea>
-                                                      <ButtonBar prefHeight="40.0" prefWidth="200.0">
-                                                          <buttons>
-                                                              <Button mnemonicParsing="false" text="Export Single Title Request List" />
-                                                          </buttons>
-                                                      </ButtonBar>
-                                                  </children>
-                                              </HBox>
-                                              <TableView prefHeight="426.0" prefWidth="482.0">
-                                                  <columns>
-                                                      <TableColumn prefWidth="171.54254150390625" text="Last Name" />
-                                                      <TableColumn prefWidth="174.45745849609375" text="First Name" />
-                                                      <TableColumn prefWidth="63.6175537109375" text="Quantity" />
-                                                  </columns>
-                                              </TableView>
-                                          </children>
-                                      </VBox>
-                                  </children>
-                              </AnchorPane>
-                          </content>
-                      </Tab>
-                      <Tab text="Monthly Breakdown">
-                          <content>
-                              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
-                                  <children>
-                                      <HBox layoutX="7.0" layoutY="10.0" prefHeight="162.0" prefWidth="626.0">
-                                          <children>
-                                              <TextArea editable="false" prefHeight="162.0" prefWidth="295.0" text="Database currently has:&#10;   X Titles&#10;   X Customers&#10;   X Special Order Notes&#10;   X Pending Issue # Requests&#10;   X Titles have not been flagged for over six months&#10;   X Titles have 0 Customer Requests&#10;" />
-                                              <VBox prefHeight="162.0" prefWidth="272.0">
-                                                  <children>
-                                                      <Button mnemonicParsing="false" text="Export All Titles with Qtys">
-                                                          <VBox.margin>
-                                                              <Insets bottom="5.0" left="25.0" top="5.0" />
-                                                          </VBox.margin>
-                                                      </Button>
-                                                      <Button mnemonicParsing="false" text="Export Customer List">
-                                                          <VBox.margin>
-                                                              <Insets bottom="5.0" left="25.0" />
-                                                          </VBox.margin>
-                                                      </Button>
-                                                      <Button mnemonicParsing="false" text="Export All Pending Issue #'s">
-                                                          <VBox.margin>
-                                                              <Insets bottom="5.0" left="25.0" />
-                                                          </VBox.margin>
-                                                      </Button>
-                                                      <Button mnemonicParsing="false" text="Export Stalled Titles">
-                                                          <VBox.margin>
-                                                              <Insets bottom="5.0" left="25.0" />
-                                                          </VBox.margin>
-                                                      </Button>
-                                                      <Button mnemonicParsing="false" text="Export 0 Request Titles">
-                                                          <VBox.margin>
-                                                              <Insets left="25.0" />
-                                                          </VBox.margin>
-                                                      </Button>
-                                                  </children>
-                                              </VBox>
-                                          </children>
-                                      </HBox>
-                                      <TableView layoutY="175.0" prefHeight="442.0" prefWidth="538.0">
-                                          <columns>
-                                              <TableColumn prefWidth="171.3168179988861" text="Title" />
-                                              <TableColumn prefWidth="44.183197021484375" text="Qty" />
-                                              <TableColumn prefWidth="137.66236877441406" text="Pending Issue #" />
-                                              <TableColumn prefWidth="182.33755493164062" text="Flagged in Last 6 Months" />
-                                          </columns>
-                                      </TableView>
-                                  </children>
-                              </AnchorPane>
-                          </content>
-                      </Tab>
-                      <Tab text="Reports History">
-                          <content>
-                              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
-                          </content>
-                      </Tab>
-                  </tabs>
-              </TabPane>
-          </content>
+         <content>
+            <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE">
+               <tabs>
+                  <Tab text="New Week Pulls">
+                     <content>
+                        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                           <children>
+                              <HBox layoutX="11.0" layoutY="6.0" prefHeight="93.0" prefWidth="488.0">
+                                 <children>
+                                    <TextArea editable="false" prefHeight="93.0" prefWidth="230.0" text="X Titles Currently Flagged for X Customers&#10;X Titles Have Triggered Issue #'s&#10;X Titles Have No Customer Requests&#10;&#10;">
+                                       <font>
+                                          <Font name="System Bold" size="12.0" />
+                                       </font>
+                                       <HBox.margin>
+                                          <Insets top="10.0" />
+                                       </HBox.margin>
+                                    </TextArea>
+                                    <Button alignment="CENTER_RIGHT" mnemonicParsing="false" prefHeight="39.0" prefWidth="192.0" text="Export New Week Flags Customer Requests" textAlignment="CENTER" wrapText="true">
+                                       <font>
+                                          <Font size="12.0" />
+                                       </font>
+                                       <HBox.margin>
+                                          <Insets bottom="5.0" left="30.0" right="5.0" top="20.0" />
+                                       </HBox.margin>
+                                    </Button>
+                                 </children>
+                              </HBox>
+                              <TableView layoutY="105.0" prefHeight="524.0" prefWidth="490.0" AnchorPane.bottomAnchor="8.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="500.0" AnchorPane.topAnchor="105.0">
+                                 <columns>
+                                    <TableColumn prefWidth="75.0" text="Title" />
+                                    <TableColumn prefWidth="75.0" text="Issue #" />
+                                    <TableColumn prefWidth="75.0" text="Price" />
+                                    <TableColumn prefWidth="75.0" text="Quantity" />
+                                    <TableColumn prefWidth="158.0" text="Notes" />
+                                 </columns>
+                              </TableView>
+                              <VBox layoutX="509.0" layoutY="105.0" prefHeight="525.0" prefWidth="482.0">
+                                 <children>
+                                    <HBox alignment="CENTER_LEFT" prefHeight="104.0" prefWidth="482.0">
+                                       <children>
+                                          <TextArea editable="false" prefHeight="98.0" prefWidth="200.0" text="Customer requests for:&#10;Title, A&#10;Total Qty: X&#10;# of Customers: X&#10;">
+                                             <HBox.margin>
+                                                <Insets bottom="2.0" />
+                                             </HBox.margin>
+                                          </TextArea>
+                                          <ButtonBar prefHeight="40.0" prefWidth="200.0">
+                                             <buttons>
+                                                <Button mnemonicParsing="false" text="Export Single Title Request List" />
+                                             </buttons>
+                                          </ButtonBar>
+                                       </children>
+                                    </HBox>
+                                    <TableView prefHeight="426.0" prefWidth="482.0">
+                                       <columns>
+                                          <TableColumn prefWidth="171.54254150390625" text="Last Name" />
+                                          <TableColumn prefWidth="174.45745849609375" text="First Name" />
+                                          <TableColumn prefWidth="63.6175537109375" text="Quantity" />
+                                       </columns>
+                                    </TableView>
+                                 </children>
+                              </VBox>
+                           </children>
+                        </AnchorPane>
+                     </content>
+                  </Tab>
+                  <Tab text="Monthly Breakdown">
+                     <content>
+                        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                           <children>
+                              <HBox layoutX="7.0" layoutY="10.0" prefHeight="162.0" prefWidth="626.0">
+                                 <children>
+                                    <TextArea editable="false" prefHeight="162.0" prefWidth="295.0" text="Database currently has:&#10;   X Titles&#10;   X Customers&#10;   X Special Order Notes&#10;   X Pending Issue # Requests&#10;   X Titles have not been flagged for over six months&#10;   X Titles have 0 Customer Requests&#10;" />
+                                    <VBox prefHeight="162.0" prefWidth="272.0">
+                                       <children>
+                                          <Button mnemonicParsing="false" text="Export All Titles with Qtys">
+                                             <VBox.margin>
+                                                <Insets bottom="5.0" left="25.0" top="5.0" />
+                                             </VBox.margin>
+                                          </Button>
+                                          <Button mnemonicParsing="false" text="Export Customer List">
+                                             <VBox.margin>
+                                                <Insets bottom="5.0" left="25.0" />
+                                             </VBox.margin>
+                                          </Button>
+                                          <Button mnemonicParsing="false" text="Export All Pending Issue #'s">
+                                             <VBox.margin>
+                                                <Insets bottom="5.0" left="25.0" />
+                                             </VBox.margin>
+                                          </Button>
+                                          <Button mnemonicParsing="false" text="Export Stalled Titles">
+                                             <VBox.margin>
+                                                <Insets bottom="5.0" left="25.0" />
+                                             </VBox.margin>
+                                          </Button>
+                                          <Button mnemonicParsing="false" text="Export 0 Request Titles">
+                                             <VBox.margin>
+                                                <Insets left="25.0" />
+                                             </VBox.margin>
+                                          </Button>
+                                       </children>
+                                    </VBox>
+                                 </children>
+                              </HBox>
+                              <TableView layoutY="175.0" prefHeight="442.0" prefWidth="538.0">
+                                 <columns>
+                                    <TableColumn prefWidth="171.3168179988861" text="Title" />
+                                    <TableColumn prefWidth="44.183197021484375" text="Qty" />
+                                    <TableColumn prefWidth="137.66236877441406" text="Pending Issue #" />
+                                    <TableColumn prefWidth="182.33755493164062" text="Flagged in Last 6 Months" />
+                                 </columns>
+                              </TableView>
+                           </children>
+                        </AnchorPane>
+                     </content>
+                  </Tab>
+                  <Tab text="Reports History">
+                     <content>
+                        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+                     </content>
+                  </Tab>
+               </tabs>
+            </TabPane>
+         </content>
       </Tab>
   </tabs>
 </TabPane>

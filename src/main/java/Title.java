@@ -1,6 +1,8 @@
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 
+import java.time.LocalDate;
+
 /**
  * A Title that has the ability to be requested by a Customer. A Title
  * consists of a title, price, notes, a flagged property, and unique ID
@@ -13,6 +15,7 @@ public class Title {
     private String notes;
     private int id;
     private BooleanProperty flagged;
+    private LocalDate dateFlagged;
 
     /**
      * Constructor. Creates a Title with the specified properties
@@ -37,12 +40,13 @@ public class Title {
      * @param notes Notes for the Title
      * @param flagged Whether the title is flagged as a new release
      */
-    public Title(int id, String title, int price, String notes, boolean flagged) {
+    public Title(int id, String title, int price, String notes, boolean flagged, LocalDate dateFlagged) {
         this.id = id;
         this.title = title;
         this.price = price;
         this.notes = notes;
         this.flagged = new SimpleBooleanProperty(flagged);
+        this.dateFlagged = dateFlagged;
     }
 
     /**
@@ -149,5 +153,14 @@ public class Title {
      */
     public void setFlagged(boolean flagged) {
         this.flagged.set(flagged);
+    }
+
+    /**
+     * Gets the date of the last time this title was flagged as a new release
+     * as a java.util.Date object
+     * @return The date of the last this title was flagged
+     */
+    public LocalDate getDateFlagged() {
+        return dateFlagged;
     }
 }
