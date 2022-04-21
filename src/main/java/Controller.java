@@ -1,3 +1,5 @@
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -19,15 +21,17 @@ import javafx.util.Callback;
 import java.net.URL;
 import java.sql.*;
 import java.text.DateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ResourceBundle;
-import java.util.Date;
 
 public class Controller implements Initializable {
 
     private boolean unsaved = false;
 
     @FXML private TableView<Customer> customerTable;
-    @FXML private TableView<OrderTable> customerOrderTable;
+    @FXML private TableView<Order> customerOrderTable;
     @FXML private TableView<Title> titleTable;
     @FXML private TableColumn<Customer, String> customerLastNameColumn;
     @FXML private TableColumn<Customer, String> customerFirstNameColumn;
@@ -39,9 +43,9 @@ public class Controller implements Initializable {
     @FXML private TableColumn<Title, String> titlePriceColumn;
     @FXML private TableColumn<Title, String> titleNotesColumn;
 
-    @FXML private TableColumn<OrderTable, String> customerOrderReqItemsColumn;
-    @FXML private TableColumn<OrderTable, String> customerOrderQuantityColumn;
-    @FXML private TableColumn<OrderTable, String> customerOrderIssueColumn;
+    @FXML private TableColumn<Order, String> customerOrderReqItemsColumn;
+    @FXML private TableColumn<Order, String> customerOrderQuantityColumn;
+    @FXML private TableColumn<Order, String> customerOrderIssueColumn;
 
     @FXML private Text customerFirstNameText;
     @FXML private Text customerLastNameText;
@@ -51,6 +55,9 @@ public class Controller implements Initializable {
     @FXML private Text titleTitleText;
     @FXML private Text titlePriceText;
     @FXML private Text titleNotesText;
+    @FXML private Text titleDateFlagged;
+    @FXML private Text titleDateFlaggedNoticeText;
+    @FXML private Text titleNumberRequestsText;
 
     private static Connection conn = null;
 
@@ -76,18 +83,28 @@ public class Controller implements Initializable {
         //Populate columns for Orders Table
         customerOrderReqItemsColumn.setCellValueFactory(new PropertyValueFactory<>("TitleName"));
         customerOrderQuantityColumn.setCellValueFactory(new PropertyValueFactory<>("quantity"));
-        customerOrderIssueColumn.setCellValueFactory(new PropertyValueFactory<>("issue"));
-          
-//        customerOrderTable.getItems().setAll(getOrders());
-  
+        customerOrderIssueColumn.setCellValueFactory(cell -> {
+            if (cell.getValue().getIssue() > 0) {
+                return new SimpleStringProperty(Integer.toString(cell.getValue().getIssue()));
+            } else {
+                return new SimpleStringProperty("");
+            }
+        });
+
         //Populate columns for Title Table
         titleFlaggedColumn.setCellValueFactory(c -> c.getValue().flaggedProperty());
         titleFlaggedColumn.setCellFactory(tc -> new CheckBoxTableCell<>());
         titleTitleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
         titlePriceColumn.setCellValueFactory(new PropertyValueFactory<>("priceDollars"));
+        titlePriceColumn.setCellValueFactory(cell -> {
+            if (cell.getValue().getPrice() > 0) {
+                return new SimpleStringProperty(cell.getValue().getPriceDollars());
+            } else {
+                return new SimpleStringProperty("");
+            }
+        });
         titleNotesColumn.setCellValueFactory(new PropertyValueFactory<>("notes"));
         titleTable.getItems().setAll(this.getTitles());
-
 
         //Add Listener for selected Customer
         customerTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
@@ -96,9 +113,7 @@ public class Controller implements Initializable {
                 customerLastNameText.setText(newSelection.getLastName());
                 customerPhoneText.setText(newSelection.getPhone());
                 customerEmailText.setText(newSelection.getEmail());
-
                 updateOrdersTable(newSelection);
-
             }
         });
 
@@ -108,15 +123,22 @@ public class Controller implements Initializable {
                 titleTitleText.setText(newSelection.getTitle());
                 titlePriceText.setText(newSelection.getPriceDollars());
                 titleNotesText.setText(newSelection.getNotes());
-            }
-        });
-
-        //Add Listener for selected Title
-        titleTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
-            if (newSelection != null) {
-                titleTitleText.setText(newSelection.getTitle());
-                titlePriceText.setText(newSelection.getPriceDollars());
-                titleNotesText.setText(newSelection.getNotes());
+                String numberRequests = String.format("This Title Currently has %s Customer Requests", getNumberRequests(newSelection));
+                LocalDate sixMonthsAgo = LocalDate.now().minusMonths(6);
+                if (newSelection.getDateFlagged() != null) {
+                    titleDateFlagged.setText(newSelection.getDateFlagged().toString());
+                    if (newSelection.getDateFlagged().isBefore(sixMonthsAgo)) {
+                        titleDateFlaggedNoticeText.setVisible(true);
+                    }
+                    else {
+                        titleDateFlaggedNoticeText.setVisible(false);
+                    }
+                }
+                else {
+                    titleDateFlagged.setText("Never");
+                    titleDateFlaggedNoticeText.setVisible(true);
+                }
+                titleNumberRequestsText.setText(numberRequests);
             }
         });
     }
@@ -160,8 +182,8 @@ public class Controller implements Initializable {
      * Gets a list representing all Orders in the database.
      * @return An ObservableList of Order objects
      */
-    public ObservableList<OrderTable> getOrderTable() {
-        ObservableList<OrderTable> orders = FXCollections.observableArrayList();
+    public ObservableList<Order> getOrderTable() {
+        ObservableList<Order> orders = FXCollections.observableArrayList();
 
         Statement s = null;
         try
@@ -178,7 +200,7 @@ public class Controller implements Initializable {
                 int quantity = results.getInt(4);
                 int issue = results.getInt(5);
 
-                orders.add(new OrderTable(customerId, titleId, title, quantity, issue));
+                orders.add(new Order(customerId, titleId, title, quantity, issue));
             }
             results.close();
             s.close();
@@ -212,8 +234,13 @@ public class Controller implements Initializable {
                 int price= results.getInt(3);
                 String notes = results.getString(4);
                 boolean flagged = results.getBoolean(5);
-                titles.add(new Title(titleId, title, price, notes, flagged));
-
+                Date dateFlagged = results.getDate(6);
+                if (dateFlagged != null) {
+                    titles.add(new Title(titleId, title, price, notes, flagged, dateFlagged.toLocalDate()));
+                }
+                else {
+                    titles.add(new Title(titleId, title, price, notes, flagged, null));
+                }
             }
             results.close();
             s.close();
@@ -295,7 +322,7 @@ public class Controller implements Initializable {
             window.initModality(Modality.APPLICATION_MODAL);
             window.setTitle("Add Title");
             window.setResizable(false);
-            window.setHeight(250);
+            window.setHeight(285);
             window.setWidth(400);
             window.setScene(new Scene(root));
             window.setOnHidden( e -> titleTable.getItems().setAll(getTitles()));
@@ -464,7 +491,7 @@ public class Controller implements Initializable {
                 window.setTitle("Edit Title");
                 window.setResizable(false);
 
-                window.setHeight(250);
+                window.setHeight(285);
                 window.setWidth(400);
 
                 window.setScene(new Scene(root));
@@ -525,8 +552,8 @@ public class Controller implements Initializable {
      * @param customer The Customer to update the Order Table for
      */
     void updateOrdersTable(Customer customer){
-        ObservableList<OrderTable> allOrders = getOrderTable();
-        ObservableList<OrderTable> customerOrders = FXCollections.observableArrayList();
+        ObservableList<Order> allOrders = getOrderTable();
+        ObservableList<Order> customerOrders = FXCollections.observableArrayList();
         for(int i=0; i < allOrders.size(); i++) {
             if (allOrders.get(i).getCustomerId() == customer.getId())
                 customerOrders.add(allOrders.get(i));
@@ -592,7 +619,9 @@ public class Controller implements Initializable {
     void saveFlags() {
 
         ObservableList<Title> titles = titleTable.getItems();
-        Date today = new Date();
+        ZonedDateTime startOfToday = LocalDate.now().atStartOfDay(ZoneId.systemDefault());
+        long todayMillis = startOfToday.toEpochSecond() * 1000;
+        Date today = new Date(todayMillis);
 
         Alert savingAlert = new Alert(Alert.AlertType.INFORMATION, "Saving New Release Flags...", ButtonType.OK);
 
@@ -605,21 +634,40 @@ public class Controller implements Initializable {
 
         for (int i = 0; i < titles.size(); i++) {
             PreparedStatement s = null;
-            String sql = """
+            if (titles.get(i).isFlagged()) {
+                String sql = """
                     UPDATE Titles
                     SET FLAGGED = ?, DATE_FLAGGED = ?
                     WHERE TITLEID = ?
                     """;
-            try {
-                s = conn.prepareStatement(sql);
-                s.setString(1, Boolean.toString(titles.get(i).isFlagged()));
-                s.setString(2, DateFormat.getDateInstance().format(today));
-                s.setString(3, Integer.toString(titles.get(i).getId()));
-                s.executeUpdate();
-                s.close();
-            } catch (SQLException sqlExcept) {
-                sqlExcept.printStackTrace();
+                try {
+                    s = conn.prepareStatement(sql);
+                    s.setString(1, Boolean.toString(titles.get(i).isFlagged()));
+                    s.setString(2, DateFormat.getDateInstance().format(today));
+                    s.setString(3, Integer.toString(titles.get(i).getId()));
+                    s.executeUpdate();
+                    s.close();
+                } catch (SQLException sqlExcept) {
+                    sqlExcept.printStackTrace();
+                }
             }
+            else {
+                String sql = """
+                    UPDATE Titles
+                    SET FLAGGED = ?
+                    WHERE TITLEID = ?
+                    """;
+                try {
+                    s = conn.prepareStatement(sql);
+                    s.setString(1, Boolean.toString(titles.get(i).isFlagged()));
+                    s.setString(2, Integer.toString(titles.get(i).getId()));
+                    s.executeUpdate();
+                    s.close();
+                } catch (SQLException sqlExcept) {
+                    sqlExcept.printStackTrace();
+                }
+            }
+
         }
 
         savingAlert.close();
@@ -628,6 +676,7 @@ public class Controller implements Initializable {
         savedAlert.setHeaderText("");
         savedAlert.show();
         this.unsaved = false;
+        titleTable.getItems().setAll(getTitles());
     }
 
     /**
@@ -655,6 +704,38 @@ public class Controller implements Initializable {
                     titleTable.getItems().setAll(getTitles());
                 });
         this.unsaved = false;
+    }
+
+    /**
+     * Gets the number of Orders for a specified Title
+     * @param title The title to count orders for
+     * @return The number of orders
+     */
+    private int getNumberRequests(Title title) {
+        int ordersCount = 0;
+        ResultSet result;
+        Statement s = null;
+        try
+        {
+            String sql = String.format("""
+                    SELECT COUNT(*) FROM ORDERS
+                    WHERE titleID = %s
+                    """, title.getId());
+
+            s = conn.createStatement();
+            result = s.executeQuery(sql);
+            while(result.next()) {
+                ordersCount = result.getInt(1);
+            }
+            result.close();
+            s.close();
+        }
+        catch (SQLException sqlExcept)
+        {
+            sqlExcept.printStackTrace();
+        }
+
+        return ordersCount;
     }
 
     /**

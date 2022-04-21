@@ -48,11 +48,11 @@ public class EditTitleController{
             {
                 s = conn.prepareStatement(sql);
                 s.setString(1, titleText);
-                s.setString(2, dollarsToCents(price));
+                s.setObject(2, dollarsToCents(price), Types.INTEGER);
                 s.setString(3, notes);
                 s.setString(4, Integer.toString(title.getId()));
                 int rowsAffected = s.executeUpdate();
-                System.out.println(rowsAffected);
+
                 if (rowsAffected == 0) {
                     //TODO: Throw an error
                 }
@@ -111,6 +111,9 @@ public class EditTitleController{
      * @return An integer representing the number of cents
      */
     private String dollarsToCents(String priceDollars) {
+        if (priceDollars == "") {
+            return null;
+        }
         priceDollars = priceDollars.replace(".", "");
         priceDollars = priceDollars.replaceAll(",", "");
         System.out.println(priceDollars);
