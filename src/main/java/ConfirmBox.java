@@ -32,7 +32,10 @@ public class ConfirmBox {
         label.setText(message);
 
         Button yesButton = new Button("Yes");
+        yesButton.setId("yesButton");
+
         Button noButton = new Button("No");
+        noButton.setId("noButton");
 
         yesButton.setOnAction(e -> {
             answer = true;

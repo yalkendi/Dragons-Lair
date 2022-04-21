@@ -14,6 +14,7 @@ import javafx.stage.Stage;
  * Main class for the application. This class contains a main method which
  * launches the application.
  */
+
 public class Main extends Application {
 
     Stage window;
