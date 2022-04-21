@@ -1,4 +1,3 @@
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -14,7 +13,6 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.util.Callback;
 
 import java.net.URL;
 import java.sql.*;
@@ -29,6 +27,8 @@ public class Controller implements Initializable {
     @FXML private TableView<Customer> customerTable;
     @FXML private TableView<OrderTable> customerOrderTable;
     @FXML private TableView<Title> titleTable;
+    @FXML private TableView<FlaggedTable> flaggedTable;                                         //Jack
+    @FXML private TableView<RequestTable> requestsTable;                                       //Jack
     @FXML private TableColumn<Customer, String> customerLastNameColumn;
     @FXML private TableColumn<Customer, String> customerFirstNameColumn;
     @FXML private TableColumn<Customer, String> customerPhoneColumn;
@@ -43,6 +43,16 @@ public class Controller implements Initializable {
     @FXML private TableColumn<OrderTable, String> customerOrderQuantityColumn;
     @FXML private TableColumn<OrderTable, String> customerOrderIssueColumn;
 
+    @FXML private TableColumn<FlaggedTable, String> flaggedTitleColumn;             //Jack
+    @FXML private TableColumn<FlaggedTable, String> flaggedIssueColumn;             //Jack
+    @FXML private TableColumn<FlaggedTable, String> flaggedPriceColumn;             //Jack
+    @FXML private TableColumn<FlaggedTable, String> flaggedQuantityColumn;          //Jack
+    @FXML private TableColumn<FlaggedTable, String> flaggedNumRequestsColumn;       //Jack
+
+    @FXML private TableColumn<RequestTable, String> requestLastNameColumn;
+    @FXML private TableColumn<RequestTable, String> requestFirstNameColumn;
+    @FXML private TableColumn<RequestTable, Integer> requestQuantityColumn;
+
     @FXML private Text customerFirstNameText;
     @FXML private Text customerLastNameText;
     @FXML private Text customerPhoneText;
@@ -51,6 +61,20 @@ public class Controller implements Initializable {
     @FXML private Text titleTitleText;
     @FXML private Text titlePriceText;
     @FXML private Text titleNotesText;
+
+
+    //for the summary info in "new week pulls" tab in "reports" tab
+    @FXML private Text FlaggedTitlesTotalText;
+    @FXML private Text FlaggedTitlesTotalCustomersText;
+    @FXML private Text FlaggedIssueNumbersText;
+    @FXML private Text FlaggedNoRequestsText;
+
+    //for the summary info on a particular flagged title, when clicked
+    @FXML private Text RequestTitleText;
+    @FXML private Text RequestQuantityText;
+    @FXML private Text RequestNumCustomersText;
+
+
 
     private static Connection conn = null;
 
@@ -83,6 +107,23 @@ public class Controller implements Initializable {
         titleTable.getItems().setAll(this.getTitles());
 
 
+        //Populate columns for flagged titles table in New Week Pulls Tab
+        flaggedTitleColumn.setCellValueFactory(new PropertyValueFactory<>("flaggedTitleName"));
+        flaggedIssueColumn.setCellValueFactory(new PropertyValueFactory<>("flaggedIssueNumber"));
+        flaggedPriceColumn.setCellValueFactory(new PropertyValueFactory<>("flaggedPriceDollars"));
+        flaggedQuantityColumn.setCellValueFactory(new PropertyValueFactory<>("flaggedQuantity"));
+        flaggedNumRequestsColumn.setCellValueFactory(new PropertyValueFactory<>("flaggedNumRequests"));
+        flaggedTable.getItems().setAll(this.getFlaggedTitles());
+
+        FlaggedTitlesTotalText.setText(Integer.toString(this.getNumTitlesCurrentlyFlagged()));
+        //FlaggedTitlesTotalCustomersText.setText(Integer.toString(getNumCustomers()));
+        FlaggedTitlesTotalCustomersText.setText("TODO");
+        //FlaggedIssueNumbersText.setText(Integer.toString(this.getNumTitlesWithIssueNumbers()));
+        FlaggedIssueNumbersText.setText("TODO");
+        //FlaggedNoRequestsText.setText(Integer.toString(getNumTitlesNoRequests()));
+        FlaggedNoRequestsText.setText("TODO");
+
+
         //Add Listener for selected Customer
         customerTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
             if (newSelection != null) {
@@ -95,6 +136,27 @@ public class Controller implements Initializable {
 
             }
         });
+
+
+        //add listener for selected flagged title
+
+        flaggedTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            if (newSelection != null) {
+
+                //first the summary info for the flagged title is set
+                RequestTitleText.setText(newSelection.getFlaggedTitleName());
+                RequestQuantityText.setText(String.valueOf(newSelection.getFlaggedQuantity()));
+                RequestNumCustomersText.setText(String.valueOf(newSelection.getFlaggedNumRequests()));
+
+                //TODO: next load the table of customers who have requested the selected title
+                requestLastNameColumn.setCellValueFactory(new PropertyValueFactory<>("RequestLastName"));
+                requestFirstNameColumn.setCellValueFactory(new PropertyValueFactory<>("RequestFirstName"));
+                requestQuantityColumn.setCellValueFactory(new PropertyValueFactory<>("RequestQuantity"));
+                requestsTable.getItems().setAll(this.getRequests(newSelection.getTitleId()));
+            }
+        });
+
+
 
         //Add Listener for Titles table
         titleTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
@@ -113,6 +175,10 @@ public class Controller implements Initializable {
                 titleNotesText.setText(newSelection.getNotes());
             }
         });
+
+
+
+
     }
 
     //Get all Customers
@@ -177,6 +243,76 @@ public class Controller implements Initializable {
 
         return orders;
     }
+
+    public ObservableList<FlaggedTable> getFlaggedTitles() {
+
+        ObservableList<FlaggedTable> flaggedTitles = FXCollections.observableArrayList();
+
+        Statement s = null;
+        try
+        {
+            s = conn.createStatement();
+            ResultSet results = s.executeQuery("SELECT TITLES.TITLEID, TITLES.TITLE, ORDERS.ISSUE, TITLES.PRICE, ORDERS.QUANTITY from TITLES" +
+                   " INNER JOIN ORDERS ON ORDERS.TITLEID = TITLES.TITLEID AND TITLES.FLAGGED=true" );
+
+            while(results.next())
+            {
+                int titleId = results.getInt(1);
+                String title = results.getString(2);
+                int issue = results.getInt(3);
+                int price= results.getInt(4);
+                int quantity = results.getInt(5);
+                int numRequests = getNumRequests(titleId);
+                flaggedTitles.add(new FlaggedTable( titleId, title, issue, price, quantity, numRequests));
+
+            }
+            results.close();
+            s.close();
+        }
+        catch (SQLException sqlExcept)
+        {
+            sqlExcept.printStackTrace();
+        }
+
+        return flaggedTitles;
+    }
+
+
+
+    /*
+    TODO
+     */
+    public ObservableList<RequestTable> getRequests(int titleID){
+
+        ObservableList<RequestTable> requestsTable = FXCollections.observableArrayList();
+
+        Statement s = null;
+        try
+        {
+            s = conn.createStatement();
+            ResultSet results = s.executeQuery("SELECT CUSTOMERS.LASTNAME, CUSTOMERS.FIRSTNAME, ORDERS.QUANTITY FROM CUSTOMERS " +
+                    "INNER JOIN ORDERS ON ORDERS.TITLEID=ORDERS.TITLEID AND TITLEID=" + titleID );
+
+            while(results.next())
+            {
+                String lastName = results.getString(1);
+                String firstName = results.getString(2);
+                int quantity = results.getInt(3);
+                requestsTable.add(new RequestTable( lastName, firstName, quantity));
+
+            }
+            results.close();
+            s.close();
+        }
+        catch (SQLException sqlExcept)
+        {
+            sqlExcept.printStackTrace();
+        }
+
+        return requestsTable;
+    }
+
+
 
     //Get all Titles
     public ObservableList<Title> getTitles() {
@@ -249,12 +385,156 @@ public class Controller implements Initializable {
     private void createConnection() {
         try {
 
-            conn = DriverManager.getConnection("jdbc:derby:/Users/loganwood/School/Capstone/derbyDB;");
+            conn = DriverManager.getConnection("jdbc:derby:/Users/jackreefe/Desktop/SCHOOL/2022 Spring/capstone/derbyDB;");
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
+
+
+
+    /*
+    private helper method to count the number of requests for a title
+     */
+    private int getNumRequests(int titleId) {
+        int numRequests = 0;
+        Statement s = null;
+        try
+        {
+            s = conn.createStatement();
+            ResultSet results = s.executeQuery("SELECT SUM(QUANTITY) FROM ORDERS WHERE ORDERS.TITLEID=" + titleId);
+
+            numRequests = results.getInt(1);
+
+            results.close();
+            s.close();
+        }
+        catch (SQLException sqlExcept)
+        {
+            sqlExcept.printStackTrace();
+        }
+
+        return numRequests;
+    }
+
+
+    /*
+    i think this works
+
+    helper method to get the first piece of summary info on "new week pulls" tab: the total # of flagged titles
+     */
+    private int getNumTitlesCurrentlyFlagged() {
+
+        int numTitlesCurrentlyFlagged = 0;
+
+        Statement s = null;
+        try
+        {
+            s = conn.createStatement();
+            ResultSet results = s.executeQuery("SELECT COUNT(TITLES.FLAGGED) AS FlagCount FROM TITLES WHERE FLAGGED=TRUE");
+
+
+            numTitlesCurrentlyFlagged = results.getInt("FlagCount");
+
+            results.close();
+            s.close();
+        }
+        catch (SQLException sqlExcept)
+        {
+            sqlExcept.printStackTrace();
+        }
+
+        return numTitlesCurrentlyFlagged;
+    }
+
+
+    /*
+    TODO: doesn't work
+
+    helper method to get the second piece of summary info on "new week pulls" tab: the number of customers the titles are flagged for
+     */
+    private int getNumCustomers(){
+        int numCustomers = 0;
+
+        Statement s = null;
+        try
+        {
+            s = conn.createStatement();
+            ResultSet results = s.executeQuery("");
+
+            numCustomers = results.getInt(1);
+
+            results.close();
+            s.close();
+        }
+        catch (SQLException sqlExcept)
+        {
+            sqlExcept.printStackTrace();
+        }
+
+        return numCustomers;
+    }
+
+
+    /*
+    possibly works
+
+    helper method to get the third piece of summary info on "new week pulls" tab: the number of titles that have triggered issue #'s
+     */
+    private int getNumTitlesWithIssueNumbers(){
+        int numTitlesWithIssueNumbers = 0;
+
+        Statement s = null;
+        try
+        {
+            s = conn.createStatement();
+            ResultSet results = s.executeQuery("SELECT COUNT(ORDERS.ISSUE) FROM TITLES INNER JOIN ORDERS ON TITLES.TITLEID=ORDERS.TITLEID");
+
+            numTitlesWithIssueNumbers = results.getInt(1);
+
+            results.close();
+            s.close();
+        }
+        catch (SQLException sqlExcept)
+        {
+            sqlExcept.printStackTrace();
+        }
+
+
+        return numTitlesWithIssueNumbers;
+    }
+
+
+    /*
+    TODO: doesn't work
+
+    helper method to get the fourth piece of summary info on "new week pulls" tab: the number of titles with no customer requests
+     */
+    private int getNumTitlesNoRequests(){
+
+        int numTitlesNoRequests = 0;
+
+        Statement s = null;
+        try
+        {
+            s = conn.createStatement();
+            ResultSet results = s.executeQuery("");
+
+            numTitlesNoRequests = results.getInt(1);
+
+            results.close();
+            s.close();
+        }
+        catch (SQLException sqlExcept)
+        {
+            sqlExcept.printStackTrace();
+        }
+
+        return numTitlesNoRequests;
+    }
+
+
 
     @FXML
     void handleAddCustomer(ActionEvent event) {
