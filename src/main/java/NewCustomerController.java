@@ -6,6 +6,11 @@ import javafx.stage.Stage;
 
 import java.sql.*;
 
+/**
+ * This Controller controls the New Customer window. It allows the window
+ * to get the text that is entered in the fields and save it in the
+ * database.
+ */
 public class NewCustomerController{
 
     private Connection conn;
@@ -17,6 +22,11 @@ public class NewCustomerController{
     @FXML private TextField newCustomerLastName;
     @FXML private TextField newCustomerPhone;
 
+    /**
+     * Creates a customer based off of the text fields and adds it
+     * to the database
+     * @param event Event that triggered this method
+     */
     @FXML
     void addCustomer(ActionEvent event) {
         String firstName = newCustomerFirstName.getText();
@@ -51,6 +61,10 @@ public class NewCustomerController{
         window.close();
     }
 
+    /**
+     * Sets the database connection for this controller
+     * @param conn Connection to set for this controller
+     */
     public void setConnection(Connection conn) {
         this.conn = conn;
     }

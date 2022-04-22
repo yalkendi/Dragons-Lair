@@ -7,6 +7,11 @@ import javafx.stage.Stage;
 
 import java.sql.*;
 
+/**
+ * This Controller controls the New Title window. It allows the window
+ * to get the text that is entered in the fields and save it in the
+ * database.
+ */
 public class NewTitleController{
 
     private Connection conn;
@@ -19,6 +24,11 @@ public class NewTitleController{
 
     @FXML private Text priceValidText;
 
+    /**
+     * Creates a title based off of the text fields and adds it
+     * to the database
+     * @param event Event that triggered this method
+     */
     @FXML
     void addTitle(ActionEvent event) {
         String title = newTitleTitle.getText();
@@ -32,7 +42,7 @@ public class NewTitleController{
             try {
                 s = conn.prepareStatement(sql);
                 s.setString(1, title);
-                s.setString(2, dollarsToCents(price));
+                s.setObject(2, dollarsToCents(price), Types.INTEGER);
                 s.setString(3, notes);
                 int rowsAffected = s.executeUpdate();
 
@@ -50,6 +60,11 @@ public class NewTitleController{
         }
     }
 
+    /**
+     * Checks to see if a price String is in the valid format
+     * @param priceDollars The String to test
+     * @return True if the String is a valid format, false otherwise
+     */
     private boolean isValidPrice(String priceDollars) {
         if (priceDollars.equals("") || priceDollars.matches("^[0-9]{1,3}(?:,?[0-9]{3})*\\.[0-9]{2}$") ) {
             return true;
@@ -59,13 +74,25 @@ public class NewTitleController{
         }
     }
 
+    /**
+     * Converts a string in the format of XXX,XXX.XX to an integer
+     * @param priceDollars The price in dollars to be converted
+     * @return An integer representing the number of cents
+     */
     private String dollarsToCents(String priceDollars) {
+        if (priceDollars == "") {
+            return null;
+        }
         priceDollars = priceDollars.replace(".", "");
         priceDollars = priceDollars.replaceAll(",", "");
         System.out.println(priceDollars);
         return priceDollars;
     }
 
+    /**
+     * Sets this database connection for this controller
+     * @param conn Connection to set for this controller
+     */
     public void setConnection(Connection conn) {
         this.conn = conn;
     }
