@@ -8,16 +8,21 @@ import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.text.Text;
+import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.sql.*;
 import java.text.DateFormat;
@@ -33,6 +38,8 @@ public class Controller implements Initializable {
     @FXML private TableView<Customer> customerTable;
     @FXML private TableView<Order> customerOrderTable;
     @FXML private TableView<Title> titleTable;
+    @FXML private TableView<FlaggedTable> flaggedTable;                                         //Jack
+    @FXML private TableView<RequestTable> requestsTable;
     @FXML private TableColumn<Customer, String> customerLastNameColumn;
     @FXML private TableColumn<Customer, String> customerFirstNameColumn;
     @FXML private TableColumn<Customer, String> customerPhoneColumn;
@@ -47,6 +54,16 @@ public class Controller implements Initializable {
     @FXML private TableColumn<Order, String> customerOrderQuantityColumn;
     @FXML private TableColumn<Order, String> customerOrderIssueColumn;
 
+    @FXML private TableColumn<FlaggedTable, String> flaggedTitleColumn;             //Jack
+    @FXML private TableColumn<FlaggedTable, String> flaggedIssueColumn;             //Jack
+    @FXML private TableColumn<FlaggedTable, String> flaggedPriceColumn;             //Jack
+    @FXML private TableColumn<FlaggedTable, String> flaggedQuantityColumn;          //Jack
+    @FXML private TableColumn<FlaggedTable, String> flaggedNumRequestsColumn;
+
+    @FXML private TableColumn<RequestTable, String> requestLastNameColumn;
+    @FXML private TableColumn<RequestTable, String> requestFirstNameColumn;
+    @FXML private TableColumn<RequestTable, Integer> requestQuantityColumn;
+
     @FXML private Text customerFirstNameText;
     @FXML private Text customerLastNameText;
     @FXML private Text customerPhoneText;
@@ -58,6 +75,17 @@ public class Controller implements Initializable {
     @FXML private Text titleDateFlagged;
     @FXML private Text titleDateFlaggedNoticeText;
     @FXML private Text titleNumberRequestsText;
+
+    //for the summary info in "new week pulls" tab in "reports" tab
+    @FXML private Text FlaggedTitlesTotalText;
+    @FXML private Text FlaggedTitlesTotalCustomersText;
+    @FXML private Text FlaggedIssueNumbersText;
+    @FXML private Text FlaggedNoRequestsText;
+
+    //for the summary info on a particular flagged title, when clicked
+    @FXML private Text RequestTitleText;
+    @FXML private Text RequestQuantityText;
+    @FXML private Text RequestNumCustomersText;
 
     private static Connection conn = null;
 
@@ -106,6 +134,33 @@ public class Controller implements Initializable {
         titleNotesColumn.setCellValueFactory(new PropertyValueFactory<>("notes"));
         titleTable.getItems().setAll(this.getTitles());
 
+        //Populate columns for flagged titles table in New Week Pulls Tab
+        flaggedTitleColumn.setCellValueFactory(new PropertyValueFactory<>("flaggedTitleName"));
+        flaggedIssueColumn.setCellValueFactory(cell -> {
+            if (cell.getValue().getFlaggedIssueNumber() > 0) {
+                return new SimpleStringProperty(Integer.toString(cell.getValue().getFlaggedIssueNumber()));
+            } else {
+                return new SimpleStringProperty("");
+            }
+        });
+        flaggedPriceColumn.setCellValueFactory(cell -> {
+            if (cell.getValue().getFlaggedPriceCents() > 0) {
+                return new SimpleStringProperty(cell.getValue().getFlaggedPriceDollars());
+            } else {
+                return new SimpleStringProperty("");
+            }
+        });
+        flaggedQuantityColumn.setCellValueFactory(new PropertyValueFactory<>("flaggedQuantity"));
+        flaggedNumRequestsColumn.setCellValueFactory(new PropertyValueFactory<>("flaggedNumRequests"));
+
+        //for requests table
+        requestLastNameColumn.setCellValueFactory(new PropertyValueFactory<>("RequestLastName"));
+        requestFirstNameColumn.setCellValueFactory(new PropertyValueFactory<>("RequestFirstName"));
+        requestQuantityColumn.setCellValueFactory(new PropertyValueFactory<>("RequestQuantity"));
+
+        //Load the data for the Reports tab
+        this.loadReportsTab();
+
         //Add Listener for selected Customer
         customerTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
             if (newSelection != null) {
@@ -123,7 +178,7 @@ public class Controller implements Initializable {
                 titleTitleText.setText(newSelection.getTitle());
                 titlePriceText.setText(newSelection.getPriceDollars());
                 titleNotesText.setText(newSelection.getNotes());
-                String numberRequests = String.format("This Title Currently has %s Customer Requests", getNumberRequests(newSelection));
+                String numberRequests = String.format("This Title Currently has %s Customer Requests", getNumberRequests(newSelection.getId()));
                 LocalDate sixMonthsAgo = LocalDate.now().minusMonths(6);
                 if (newSelection.getDateFlagged() != null) {
                     titleDateFlagged.setText(newSelection.getDateFlagged().toString());
@@ -141,7 +196,43 @@ public class Controller implements Initializable {
                 titleNumberRequestsText.setText(numberRequests);
             }
         });
+
+        //add listener for selected flagged title
+
+        flaggedTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            if (newSelection != null) {
+
+                //first the summary info for the flagged title is set
+                if (newSelection.getFlaggedIssueNumber() > 0) {
+                    RequestTitleText.setText(newSelection.getFlaggedTitleName() + " " + newSelection.getFlaggedIssueNumber());
+                }
+                else {
+                    RequestTitleText.setText(newSelection.getFlaggedTitleName());
+                }
+                RequestQuantityText.setText(Integer.toString(newSelection.getFlaggedQuantity()));
+                RequestNumCustomersText.setText(Integer.toString(newSelection.getFlaggedNumRequests()));
+
+                //TODO: next load the table of customers who have requested the selected title
+
+                //updateRequestsTable(newSelection.getTitleId());
+                requestsTable.getItems().setAll(this.getRequests(newSelection.getTitleId(), newSelection.getFlaggedIssueNumber()));
+            }
+        });
     }
+
+    /**
+     * Private helper method to make it easier to refresh the data
+     * for the reports tab
+     */
+    private void loadReportsTab() {
+        FlaggedTitlesTotalText.setText(Integer.toString(this.getNumTitlesCurrentlyFlagged()));
+        FlaggedTitlesTotalCustomersText.setText(Integer.toString((this.getNumCustomers())));
+        FlaggedIssueNumbersText.setText(Integer.toString(this.getNumFlaggedWithIssueNumbers()));
+        FlaggedNoRequestsText.setText(Integer.toString(getNumTitlesNoRequests()));
+
+        flaggedTable.getItems().setAll(this.getFlaggedTitles());
+    }
+
 
     /**
      * Gets a list representing all Customers in the database
@@ -259,17 +350,249 @@ public class Controller implements Initializable {
         return titles;
     }
 
+    public ObservableList<FlaggedTable> getFlaggedTitles() {
+
+        ObservableList<FlaggedTable> flaggedTitles = FXCollections.observableArrayList();
+
+        Statement s = null;
+        try
+        {
+            s = conn.createStatement();
+
+            ResultSet results = s.executeQuery("""
+            SELECT TITLEID, TITLE, ISSUE, PRICE, SUM(QUANTITY) AS QUANTITY, COUNT(TITLEID) AS NUM_REQUESTS FROM (
+                                                                                    SELECT TITLES.TITLEID, TITLES.TITLE, ORDERS.ISSUE, TITLES.PRICE, ORDERS.QUANTITY
+                                                                                    from TITLES
+                                                                                             INNER JOIN ORDERS ON ORDERS.TITLEID = TITLES.TITLEID
+                                                                                    WHERE TITLES.FLAGGED = true
+                                                                                ) AS FLAGGED_ORDERS
+            GROUP BY TITLEID, TITLE, ISSUE, PRICE
+            ORDER BY TITLE, ISSUE
+            """);
+            
+            while(results.next())
+            {
+                int titleId = results.getInt(1);
+                String title = results.getString(2);
+                int issue = results.getInt(3);
+                int price= results.getInt(4);
+                int quantity = results.getInt(5);
+                int numRequests = results.getInt(6);
+
+                flaggedTitles.add(new FlaggedTable( titleId, title, issue, price, quantity, numRequests));
+
+            }
+            results.close();
+            s.close();
+        }
+        catch (SQLException sqlExcept)
+        {
+            sqlExcept.printStackTrace();
+        }
+
+        return flaggedTitles;
+    }
+
+    /*
+    TODO
+     */
+    public ObservableList<RequestTable> getRequests(int titleId, int issue) {
+
+        ObservableList<RequestTable> requestsTable = FXCollections.observableArrayList();
+
+        Statement s = null;
+        try
+        {
+            String sql = "";
+            if (issue > 0) {
+                sql = String.format("""
+                        SELECT CUSTOMERS.LASTNAME, CUSTOMERS.FIRSTNAME, ORDERS.QUANTITY FROM CUSTOMERS
+                        INNER JOIN ORDERS ON ORDERS.CUSTOMERID=CUSTOMERS.CUSTOMERID
+                        WHERE ORDERS.TITLEID=%s AND ORDERS.ISSUE=%s
+                        """, titleId, issue);
+            } else {
+                sql = String.format("""
+                        SELECT CUSTOMERS.LASTNAME, CUSTOMERS.FIRSTNAME, ORDERS.QUANTITY FROM CUSTOMERS
+                        INNER JOIN ORDERS ON ORDERS.CUSTOMERID=CUSTOMERS.CUSTOMERID
+                        WHERE ORDERS.TITLEID=%s AND ORDERS.ISSUE IS NULL
+                        """, titleId);
+            }
+
+            //ResultSet results = s.executeQuery("SELECT CUSTOMERS.LASTNAME, CUSTOMERS.FIRSTNAME, ORDERS.QUANTITY FROM CUSTOMERS " +
+            //        "INNER JOIN ORDERS ON ORDERS.TITLEID=ORDERS.TITLEID AND TITLEID=" + titleId );
+            s = conn.createStatement();
+
+            ResultSet results = s.executeQuery(sql);
+
+            while(results.next())
+            {
+                //int titleID = results.getInt(1);
+                String lastName = results.getString(1);
+                String firstName = results.getString(2);
+                int quantity = results.getInt(3);
+                requestsTable.add(new RequestTable( lastName, firstName, quantity));
+
+            }
+            results.close();
+            s.close();
+        }
+        catch (SQLException sqlExcept)
+        {
+            sqlExcept.printStackTrace();
+        }
+
+        return requestsTable;
+    }
+
     /**
      * Creates a connection to the database and sets the global conn variable.
      */
     private void createConnection() {
         try {
-
-            conn = DriverManager.getConnection("jdbc:derby:" + System.getProperty("user.home") + "/DragonSlayer/derbyDB;");
-
+            conn = DriverManager.getConnection("jdbc:derby:" + System.getProperty("user.home") + "/DragonSlayer/derbyDB;create=true");
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    /*
+    i think this works
+
+    helper method to get the first piece of summary info on "new week pulls" tab: the total # of flagged titles
+     */
+    private int getNumTitlesCurrentlyFlagged() {
+
+        int numTitlesCurrentlyFlagged = 0;
+
+        Statement s = null;
+        try
+        {
+            s = conn.createStatement();
+            ResultSet results = s.executeQuery("SELECT COUNT(TITLES.FLAGGED) AS FlagCount FROM TITLES WHERE FLAGGED=TRUE");
+
+            results.next();
+            numTitlesCurrentlyFlagged = results.getInt("FlagCount");
+
+            results.close();
+            s.close();
+        }
+        catch (SQLException sqlExcept)
+        {
+            sqlExcept.printStackTrace();
+        }
+
+        return numTitlesCurrentlyFlagged;
+    }
+
+
+    /*
+    TODO: doesn't work
+
+    helper method to get the second piece of summary info on "new week pulls" tab: the number of customers the titles are flagged for
+     */
+    private int getNumCustomers(){
+        int numCustomers = 0;
+
+        Statement s = null;
+        try
+        {
+            s = conn.createStatement();
+            ResultSet results = s.executeQuery("""
+                SELECT COUNT(*) FROM (
+                        SELECT DISTINCT CUSTOMERID FROM ORDERS
+                        LEFT JOIN TITLES T on ORDERS.TITLEID = T.TITLEID
+                        WHERE FLAGGED = TRUE
+                    ) AS FLAGGED_CUSTOMERS
+            """);
+
+            results.next();
+            numCustomers = results.getInt(1);
+
+            results.close();
+            s.close();
+        }
+        catch (SQLException sqlExcept)
+        {
+            sqlExcept.printStackTrace();
+        }
+
+        return numCustomers;
+    }
+
+
+    /*
+    possibly works
+
+    helper method to get the third piece of summary info on "new week pulls" tab: the number of titles that have triggered issue #'s
+     */
+    private int getNumFlaggedWithIssueNumbers(){
+        int numTitlesWithIssueNumbers = 0;
+
+        Statement s = null;
+        try
+        {
+            s = conn.createStatement();
+            ResultSet results = s.executeQuery("""
+                SELECT COUNT(*) AS TRIGGERED_ISSUE_COUNT FROM (
+                    SELECT DISTINCT TITLEID FROM (
+                                                     SELECT TITLES.TITLEID, ORDERS.ISSUE
+                                                     FROM TITLES
+                                                              INNER JOIN ORDERS ON ORDERS.TITLEID = TITLES.TITLEID
+                                                     WHERE TITLES.FLAGGED = true AND ISSUE IS NOT NULL
+                                                 ) AS FLAGGED_ORDERS
+                    ) AS ISSUE_NOT_NULL_TITLES
+            """);
+
+            results.next();
+            numTitlesWithIssueNumbers = results.getInt(1);
+
+            results.close();
+            s.close();
+        }
+        catch (SQLException sqlExcept)
+        {
+            sqlExcept.printStackTrace();
+        }
+
+        return numTitlesWithIssueNumbers;
+    }
+
+
+    /*
+    TODO: doesn't work
+
+    helper method to get the fourth piece of summary info on "new week pulls" tab: the number of titles with no customer requests
+     */
+    private int getNumTitlesNoRequests(){
+        int numTitlesWithNoRequests = 0;
+
+        Statement s = null;
+        try
+        {
+            s = conn.createStatement();
+            ResultSet results = s.executeQuery("""
+                        SELECT COUNT(*) FROM (
+                                SELECT DISTINCT T.TITLEID
+                                FROM ORDERS
+                                LEFT JOIN TITLES T on ORDERS.TITLEID = T.TITLEID
+                                WHERE FLAGGED = TRUE
+                        ) AS FLAGGED_WITH_REQUESTS
+                        RIGHT JOIN TITLES ON TITLES.TITLEID = FLAGGED_WITH_REQUESTS.TITLEID
+                        WHERE FLAGGED_WITH_REQUESTS.TITLEID IS NULL AND FLAGGED = TRUE
+            """);
+
+            results.next();
+            numTitlesWithNoRequests = results.getInt(1);
+
+            results.close();
+            s.close();
+        }
+        catch (SQLException sqlExcept)
+        {
+            sqlExcept.printStackTrace();
+        }
+
+        return numTitlesWithNoRequests;
     }
 
     /**
@@ -294,7 +617,10 @@ public class Controller implements Initializable {
             window.setHeight(250);
             window.setWidth(400);
             window.setScene(new Scene(root));
-            window.setOnHidden( e -> customerTable.getItems().setAll(getCustomers()));
+            window.setOnHidden( e -> {
+                customerTable.getItems().setAll(getCustomers());
+                this.loadReportsTab();
+            });
 
             window.show();
         } catch (Exception e) {
@@ -325,7 +651,10 @@ public class Controller implements Initializable {
             window.setHeight(285);
             window.setWidth(400);
             window.setScene(new Scene(root));
-            window.setOnHidden( e -> titleTable.getItems().setAll(getTitles()));
+            window.setOnHidden( e -> {
+                titleTable.getItems().setAll(getTitles());
+                this.loadReportsTab();
+            });
 
             window.show();
         } catch (Exception e) {
@@ -377,6 +706,7 @@ public class Controller implements Initializable {
             customerLastNameText.setText("");
             customerPhoneText.setText("");
             customerEmailText.setText("");
+            this.loadReportsTab();
         }
     }
 
@@ -421,6 +751,7 @@ public class Controller implements Initializable {
             titleTitleText.setText("");
             titlePriceText.setText("");
             titleNotesText.setText("");
+            this.loadReportsTab();
         }
     }
 
@@ -457,6 +788,7 @@ public class Controller implements Initializable {
                     customerLastNameText.setText("");
                     customerPhoneText.setText("");
                     customerEmailText.setText("");
+                    this.loadReportsTab();
                 });
                 window.show();
             } catch (Exception e) {
@@ -500,6 +832,7 @@ public class Controller implements Initializable {
                     titleTitleText.setText("");
                     titlePriceText.setText("");
                     titleNotesText.setText("");
+                    this.loadReportsTab();
                 });
                 window.show();
             } catch (Exception e) {
@@ -538,11 +871,92 @@ public class Controller implements Initializable {
                 window.setHeight(250);
                 window.setWidth(400);
                 window.setScene(new Scene(root));
-                window.setOnHidden(e -> updateOrdersTable(customerTable.getSelectionModel().getSelectedItem()));
+                window.setOnHidden(e ->  {
+                    updateOrdersTable(customerTable.getSelectionModel().getSelectedItem());
+                    this.loadReportsTab();
+                });
                 window.show();
             } catch (Exception e) {
                 System.out.println("Error when opening window. This is probably a bug");
                 e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * This method is called when the singleTitleReportButton button is
+     * clicked.
+     */
+    @FXML
+    void handleExportSingleTitle(ActionEvent event) {
+
+        Title title = titleTable.getSelectionModel().getSelectedItem();
+
+        if (title == null) {
+            Alert selectedAlert = new Alert(Alert.AlertType.INFORMATION, "Please select a title.", ButtonType.OK);
+            selectedAlert.setTitle("Confirm Export");
+            selectedAlert.setHeaderText("");
+            selectedAlert.show();
+        } else {
+            LocalDate today = LocalDate.now();
+            String fileName = title.getTitle() + " Requests " + today;
+
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Export Location");
+            fileChooser.setInitialFileName(fileName);
+            File file = fileChooser.showSaveDialog(((Node) event.getTarget()).getScene().getWindow());
+
+            if (file != null) {
+                try {
+                    try (PrintWriter writer = new PrintWriter(file.getAbsolutePath() + ".csv")) {
+                        StringBuilder sb = new StringBuilder();
+                        sb.append("Customer,");
+                        sb.append("Issue,");
+                        sb.append("Quantity");
+                        sb.append('\n');
+
+                        ResultSet result;
+                        Statement s = null;
+                        try
+                        {
+                            String sql = String.format("""
+                                SELECT FIRSTNAME, LASTNAME, ISSUE, QUANTITY FROM ORDERS
+                                LEFT JOIN CUSTOMERS C on C.CUSTOMERID = ORDERS.CUSTOMERID
+                                WHERE TITLEID = %s
+                                ORDER BY LASTNAME
+                                """, title.getId());
+
+                                s = conn.createStatement();
+                                result = s.executeQuery(sql);
+                                while(result.next()) {
+                                   sb.append(result.getString("LASTNAME"));
+                                   sb.append(" ");
+                                   sb.append(result.getString("FIRSTNAME"));
+                                   sb.append(",");
+                                   Object issue = result.getObject("ISSUE");
+                                   if (issue != null) {
+                                       sb.append(issue);
+                                   }
+                                   sb.append(",");
+                                   sb.append(result.getInt("QUANTITY"));
+                                   sb.append("\n");
+                                }
+                                result.close();
+                                s.close();
+                        }
+                        catch (SQLException sqlExcept)
+                        {
+                            sqlExcept.printStackTrace();
+                        }
+
+                        writer.write(sb.toString());
+
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -608,7 +1022,7 @@ public class Controller implements Initializable {
             }
             titleTable.getItems().setAll(getTitles());
             updateOrdersTable(customerTable.getSelectionModel().getSelectedItem());
-
+            this.loadReportsTab();
         }
     }
 
@@ -677,6 +1091,7 @@ public class Controller implements Initializable {
         savedAlert.show();
         this.unsaved = false;
         titleTable.getItems().setAll(getTitles());
+        this.loadReportsTab();
     }
 
     /**
@@ -702,16 +1117,17 @@ public class Controller implements Initializable {
                         sqlExcept.printStackTrace();
                     }
                     titleTable.getItems().setAll(getTitles());
+                    this.loadReportsTab();
                 });
         this.unsaved = false;
     }
 
     /**
      * Gets the number of Orders for a specified Title
-     * @param title The title to count orders for
+     * @param titleId The title to count orders for
      * @return The number of orders
      */
-    private int getNumberRequests(Title title) {
+    private int getNumberRequests(int titleId) {
         int ordersCount = 0;
         ResultSet result;
         Statement s = null;
@@ -720,7 +1136,7 @@ public class Controller implements Initializable {
             String sql = String.format("""
                     SELECT COUNT(*) FROM ORDERS
                     WHERE titleID = %s
-                    """, title.getId());
+                    """, titleId);
 
             s = conn.createStatement();
             result = s.executeQuery(sql);
