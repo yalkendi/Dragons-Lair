@@ -145,10 +145,10 @@ public class Controller implements Initializable {
         FlaggedTitlesTotalText.setText(Integer.toString(this.getNumTitlesCurrentlyFlagged()));
         //FlaggedTitlesTotalCustomersText.setText(Integer.toString(getNumCustomers()));
         FlaggedTitlesTotalCustomersText.setText("TODO");
-        //FlaggedIssueNumbersText.setText(Integer.toString(this.getNumTitlesWithIssueNumbers()));
-        FlaggedIssueNumbersText.setText("TODO");
+        FlaggedIssueNumbersText.setText(Integer.toString(this.getNumFlaggedWithIssueNumbers()));
+        //FlaggedIssueNumbersText.setText("");
         //FlaggedNoRequestsText.setText(Integer.toString(getNumTitlesNoRequests()));
-        FlaggedNoRequestsText.setText("TODO");
+        FlaggedNoRequestsText.setText(Integer.toString(getNumTitlesNoRequests()));
 
         //Add Listener for selected Customer
         customerTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
@@ -193,13 +193,13 @@ public class Controller implements Initializable {
 
                 //first the summary info for the flagged title is set
                 RequestTitleText.setText(newSelection.getFlaggedTitleName());
-                RequestQuantityText.setText(String.valueOf(newSelection.getFlaggedQuantity()));
-                RequestNumCustomersText.setText(String.valueOf(newSelection.getFlaggedNumRequests()));
+                RequestQuantityText.setText(Integer.toString(newSelection.getFlaggedQuantity()));
+                RequestNumCustomersText.setText(Integer.toString(getNumRequests(newSelection.getTitleId())));
 
                 //TODO: next load the table of customers who have requested the selected title
 
-                updateRequestsTable(newSelection.getTitleId());
-                //requestsTable.getItems().setAll(this.getRequests(newSelection.getTitleId()));
+                //updateRequestsTable(newSelection.getTitleId());
+                requestsTable.getItems().setAll(this.getRequests(newSelection.getTitleId()));
             }
         });
     }
@@ -331,6 +331,7 @@ public class Controller implements Initializable {
             //ResultSet results = s.executeQuery("SELECT TITLES.TITLEID, TITLES.TITLE, ORDERS.ISSUE, TITLES.PRICE, ORDERS.QUANTITY from TITLES" +
             //        " INNER JOIN ORDERS ON ORDERS.TITLEID = TITLES.TITLEID AND TITLES.FLAGGED=true" );
 
+
             ResultSet results = s.executeQuery("""
             SELECT TITLEID, TITLE, ISSUE, PRICE, SUM(QUANTITY) AS QUANTITY FROM (
                                                   SELECT TITLES.TITLEID, TITLES.TITLE, ORDERS.ISSUE, TITLES.PRICE, ORDERS.QUANTITY
@@ -349,6 +350,8 @@ public class Controller implements Initializable {
                 int price= results.getInt(4);
                 int quantity = results.getInt(5);
                 int numRequests = getNumRequests(titleId);
+
+
                 flaggedTitles.add(new FlaggedTable( titleId, title, issue, price, quantity, numRequests));
 
             }
@@ -373,17 +376,27 @@ public class Controller implements Initializable {
         Statement s = null;
         try
         {
+
+
+            String sql = String.format("""
+                    SELECT CUSTOMERS.LASTNAME, CUSTOMERS.FIRSTNAME, ORDERS.QUANTITY FROM CUSTOMERS
+                    INNER JOIN ORDERS ON ORDERS.CUSTOMERID=CUSTOMERS.CUSTOMERID
+                    WHERE ORDERS.TITLEID=%s
+                    """, titleId);
+
+            //ResultSet results = s.executeQuery("SELECT CUSTOMERS.LASTNAME, CUSTOMERS.FIRSTNAME, ORDERS.QUANTITY FROM CUSTOMERS " +
+            //        "INNER JOIN ORDERS ON ORDERS.TITLEID=ORDERS.TITLEID AND TITLEID=" + titleId );
             s = conn.createStatement();
-            ResultSet results = s.executeQuery("SELECT ORDERS.TITLEID, CUSTOMERS.LASTNAME, CUSTOMERS.FIRSTNAME, ORDERS.QUANTITY FROM CUSTOMERS " +
-                    "INNER JOIN ORDERS ON ORDERS.TITLEID=ORDERS.TITLEID AND TITLEID=" + titleId );
+
+            ResultSet results = s.executeQuery(sql);
 
             while(results.next())
             {
-                int titleID = results.getInt(1);
-                String lastName = results.getString(2);
-                String firstName = results.getString(3);
-                int quantity = results.getInt(4);
-                requestsTable.add(new RequestTable( titleID, lastName, firstName, quantity));
+                //int titleID = results.getInt(1);
+                String lastName = results.getString(1);
+                String firstName = results.getString(2);
+                int quantity = results.getInt(3);
+                requestsTable.add(new RequestTable( lastName, firstName, quantity));
 
             }
             results.close();
@@ -399,6 +412,7 @@ public class Controller implements Initializable {
 
 
 
+    /*
     void updateRequestsTable(int flaggedTitleID) {
         ObservableList<RequestTable> allRequests = getRequests(flaggedTitleID);
         ObservableList<RequestTable> titleRequests = FXCollections.observableArrayList();
@@ -409,6 +423,8 @@ public class Controller implements Initializable {
         }
         requestsTable.getItems().setAll(titleRequests);
     }
+
+    */
 
     /**
      * Creates a connection to the database and sets the global conn variable.
@@ -433,8 +449,8 @@ public class Controller implements Initializable {
         try
         {
             String sql = String.format("""
-                    SELECT COUNT(*) FROM ORDERS
-                    WHERE titleID = %s
+                    SELECT SUM(QUANTITY) FROM ORDERS
+                    WHERE ORDERS.titleID = %s
                     """, titleId);
 
             s = conn.createStatement();
@@ -523,15 +539,21 @@ public class Controller implements Initializable {
 
     helper method to get the third piece of summary info on "new week pulls" tab: the number of titles that have triggered issue #'s
      */
-    private int getNumTitlesWithIssueNumbers(){
+    private int getNumFlaggedWithIssueNumbers(){
         int numTitlesWithIssueNumbers = 0;
+
+
+
+
+
 
         Statement s = null;
         try
         {
             s = conn.createStatement();
-            ResultSet results = s.executeQuery("SELECT COUNT(ORDERS.ISSUE) FROM TITLES INNER JOIN ORDERS ON TITLES.TITLEID=ORDERS.TITLEID");
+            ResultSet results = s.executeQuery("SELECT COUNT(*) FROM ORDERS WHERE ISSUE IS NOT NULL");
 
+            results.next();
             numTitlesWithIssueNumbers = results.getInt(1);
 
             results.close();
@@ -541,6 +563,7 @@ public class Controller implements Initializable {
         {
             sqlExcept.printStackTrace();
         }
+
 
 
         return numTitlesWithIssueNumbers;
@@ -554,11 +577,25 @@ public class Controller implements Initializable {
      */
     private int getNumTitlesNoRequests(){
 
+
         int numTitlesNoRequests = 0;
 
+        /*
+        for (int i = 0; i < getFlaggedTitles().size(); i++) {
+            if (getFlaggedTitles().get(i).getFlaggedNumRequests() < 1){
+                numTitlesNoRequests++;
+            }
+        }
+        */
+
+
+        numTitlesNoRequests = getNumTitlesCurrentlyFlagged() - getFlaggedTitles().size();
+
+        /*
         Statement s = null;
         try
         {
+
             s = conn.createStatement();
             ResultSet results = s.executeQuery("");
 
@@ -571,6 +608,7 @@ public class Controller implements Initializable {
         {
             sqlExcept.printStackTrace();
         }
+        */
 
         return numTitlesNoRequests;
     }
