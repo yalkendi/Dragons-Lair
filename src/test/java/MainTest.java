@@ -47,70 +47,83 @@ public class MainTest extends ApplicationTest {
     public void testAddingCustomer () {
         int before = controller.getCustomers().size();
 
-        clickOn("Customers");
-        clickOn("#addCustomerButtonMain");
-        clickOn("#newCustomerFirstName");
-        write("TestFirst");
-        clickOn("#newCustomerLastName");
-        write("TestLast");
-        clickOn("#newCustomerPhone");
-        write("911-911-9911");
-        clickOn("#newCustomerEmail");
-        write("Test@dumpy.net");
+        int added = 5;
 
-        clickOn("#addCustomerButton");
+        for (int i = 1; i <= added; i++){
+            clickOn("Customers");
+            clickOn("#addCustomerButtonMain");
+            clickOn("#newCustomerFirstName");
+            write("TestFirst" + i);
+            clickOn("#newCustomerLastName");
+            write("TestLast" + i);
+            clickOn("#newCustomerPhone");
+            write("911-911-9911");
+            clickOn("#newCustomerEmail");
+            write("Test@dumpy.net");
+            clickOn("#addCustomerButton");
+        }
+
 
 
         int after = controller.getCustomers().size();
 
-        assertEquals(before+1, after);
+        assertEquals(before + added, after);
     }
 
     @Test
     public void testAddingTitle () {
         int before = controller.getTitles().size();
+        int added = 5;
 
-        clickOn("Titles");
-        clickOn("#addTitleButtonMain");
-        clickOn("#newTitleTitle");
-        write("The test");
-        clickOn("#newTitlePrice");
-        write("5.00");
-        clickOn("#newTitleNotes");
-        write("Just testing");
+        for (int i = 1; i <= added; i++) {
+            clickOn("Titles");
+            clickOn("#addTitleButtonMain");
+            clickOn("#newTitleTitle");
+            write("The test"+ i);
+            clickOn("#newTitlePrice");
+            write("5.00");
+            clickOn("#newTitleNotes");
+            write("Just testing");
 
-        clickOn("#addTitleButton");
+            clickOn("#addTitleButton");
+        }
 
         int after = controller.getTitles().size();
 
-        assertEquals(before+1, after);
+        assertEquals(before + added, after);
     }
 
     @Test
     public void testDeletingTitle () {
         int before = controller.getTitles().size();
+        int added = 5;
 
-        clickOn("Titles");
-        clickOn("The test");
-        clickOn("#deleteTitleButton");
-        clickOn("#yesButton");
+        for (int i = 1; i <= added; i++) {
+            clickOn("Titles");
+            clickOn("The test"+ i);
+            clickOn("#deleteTitleButton");
+            clickOn("#yesButton");
+        }
 
         int after = controller.getTitles().size();
 
-        assertEquals(before - 1, after);
+        assertEquals(before - added, after);
     }
 
     @Test
     public void testDeletingCustomer () {
         int before = controller.getCustomers().size();
+        int added = 5;
 
-        clickOn("Customers");
-        clickOn("TestLast");
-        clickOn("#deleteCustomerButton");
-        clickOn("#yesButton");
+        for (int i = 1; i <= added; i++) {
+            clickOn("Customers");
+            clickOn("TestLast" + i);
+            clickOn("#deleteCustomerButton");
+            clickOn("#yesButton");
+        }
 
         int after = controller.getCustomers().size();
 
-        assertEquals(before - 1, after);
+        assertEquals(before - added, after);
     }
 }
