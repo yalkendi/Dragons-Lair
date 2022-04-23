@@ -8,16 +8,21 @@ import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.text.Text;
+import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.sql.*;
 import java.text.DateFormat;
@@ -543,6 +548,84 @@ public class Controller implements Initializable {
             } catch (Exception e) {
                 System.out.println("Error when opening window. This is probably a bug");
                 e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * This method is called when the singleTitleReportButton button is
+     * clicked.
+     */
+    @FXML
+    void handleExportSingleTitle(ActionEvent event) {
+
+        Title title = titleTable.getSelectionModel().getSelectedItem();
+
+        if (title == null) {
+            Alert selectedAlert = new Alert(Alert.AlertType.INFORMATION, "Please select a title.", ButtonType.OK);
+            selectedAlert.setTitle("Confirm Export");
+            selectedAlert.setHeaderText("");
+            selectedAlert.show();
+        } else {
+            LocalDate today = LocalDate.now();
+            String fileName = title.getTitle() + " Requests " + today;
+
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Export Location");
+            fileChooser.setInitialFileName(fileName);
+            File file = fileChooser.showSaveDialog(((Node) event.getTarget()).getScene().getWindow());
+
+            if (file != null) {
+                try {
+                    try (PrintWriter writer = new PrintWriter(file.getAbsolutePath() + ".csv")) {
+                        StringBuilder sb = new StringBuilder();
+                        sb.append("Customer,");
+                        sb.append("Issue,");
+                        sb.append("Quantity");
+                        sb.append('\n');
+
+                        ResultSet result;
+                        Statement s = null;
+                        try
+                        {
+                            String sql = String.format("""
+                                SELECT FIRSTNAME, LASTNAME, ISSUE, QUANTITY FROM ORDERS
+                                LEFT JOIN CUSTOMERS C on C.CUSTOMERID = ORDERS.CUSTOMERID
+                                WHERE TITLEID = %s
+                                ORDER BY LASTNAME
+                                """, title.getId());
+
+                                s = conn.createStatement();
+                                result = s.executeQuery(sql);
+                                while(result.next()) {
+                                   sb.append(result.getString("LASTNAME"));
+                                   sb.append(" ");
+                                   sb.append(result.getString("FIRSTNAME"));
+                                   sb.append(",");
+                                   Object issue = result.getObject("ISSUE");
+                                   if (issue != null) {
+                                       sb.append(issue);
+                                   }
+                                   sb.append(",");
+                                   sb.append(result.getInt("QUANTITY"));
+                                   sb.append("\n");
+                                }
+                                result.close();
+                                s.close();
+                        }
+                        catch (SQLException sqlExcept)
+                        {
+                            sqlExcept.printStackTrace();
+                        }
+
+                        writer.write(sb.toString());
+
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
