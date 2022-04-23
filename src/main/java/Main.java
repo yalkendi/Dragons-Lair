@@ -30,7 +30,7 @@ public class Main extends Application {
      */
     @Override
     public void start(Stage primaryStage) throws Exception {
-        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("sample-reports.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("sample.fxml"));
         Parent root = fxmlLoader.load();
         Controller controller = fxmlLoader.getController();
         window = primaryStage;

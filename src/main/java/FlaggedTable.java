@@ -24,7 +24,7 @@ public class FlaggedTable {
     public int getTitleId(){ return this.titleId; }
     public String getFlaggedTitleName(){ return this.flaggedTitleName; }
     public int getFlaggedIssueNumber(){ return this.flaggedIssueNumber; }
-
+    public int getFlaggedPriceCents() { return this.flaggedPriceDollars; }
     public String getFlaggedPriceDollars(){
         String total;
         int dollars = (flaggedPriceDollars / 100);
