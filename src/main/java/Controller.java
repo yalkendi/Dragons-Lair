@@ -843,6 +843,49 @@ public class Controller implements Initializable {
     }
 
     /**
+     * Runs when the Edit Title button is pressed. Creates a new window for
+     * the user to enter information and edit a title. Re-renders the
+     * Title table on window close.
+     * @param event Event that triggered the method call.
+     */
+    @FXML
+    void handleEditOrder(ActionEvent event) {
+        if (customerOrderTable.getSelectionModel().getSelectedItem() == null) {
+            AlertBox.display("Confirm Edit", "Please select an order.");
+        }
+        else {
+            try {
+                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("EditOrderBox.fxml"));
+                Parent root = fxmlLoader.load();
+
+                EditOrderController editOrderController = fxmlLoader.getController();
+                editOrderController.setConnection(conn);
+
+                editOrderController.populate(this.getTitles());
+                editOrderController.setOrder(customerOrderTable.getSelectionModel().getSelectedItem());
+
+                Stage window = new Stage();
+                window.initModality(Modality.APPLICATION_MODAL);
+                window.setTitle("Edit Order");
+                window.setResizable(false);
+
+                window.setHeight(285);
+                window.setWidth(400);
+
+                window.setScene(new Scene(root));
+                window.setOnHidden(e -> {
+                    updateOrdersTable(customerTable.getSelectionModel().getSelectedItem());
+                    this.loadReportsTab();
+                });
+                window.show();
+            } catch (Exception e) {
+                System.out.println("Error when opening window. This is probably a bug");
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
      * Runs when the Add Request button is pressed. Creates a new window for
      * the user to enter information and create an Order. Re-renders the
      * Orders table on window close.
