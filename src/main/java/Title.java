@@ -16,6 +16,7 @@ public class Title {
     private int id;
     private BooleanProperty flagged;
     private LocalDate dateFlagged;
+    private int issueFlagged;
 
     /**
      * Constructor. Creates a Title with the specified properties
@@ -40,13 +41,14 @@ public class Title {
      * @param notes Notes for the Title
      * @param flagged Whether the title is flagged as a new release
      */
-    public Title(int id, String title, int price, String notes, boolean flagged, LocalDate dateFlagged) {
+    public Title(int id, String title, int price, String notes, boolean flagged, LocalDate dateFlagged, int issueFlagged) {
         this.id = id;
         this.title = title;
         this.price = price;
         this.notes = notes;
         this.flagged = new SimpleBooleanProperty(flagged);
         this.dateFlagged = dateFlagged;
+        this.issueFlagged = issueFlagged;
     }
 
     /**
@@ -163,4 +165,8 @@ public class Title {
     public LocalDate getDateFlagged() {
         return dateFlagged;
     }
+
+    public int getIssueFlagged() { return issueFlagged; }
+
+    public void setIssueFlagged(int issueFlagged) { this.issueFlagged = issueFlagged; }
 }
