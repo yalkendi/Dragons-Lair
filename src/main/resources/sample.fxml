@@ -85,11 +85,16 @@
                                           <Font size="11.0" />
                                        </font>
                                     </Button>
-                                    <Button mnemonicParsing="false" onAction="#handleDeleteOrder" prefWidth="100.0" text="Edit/Delete Selected" wrapText="true">
+                                    <Button mnemonicParsing="false" onAction="#handleDeleteOrder" prefWidth="100.0" text="Delete Selected" wrapText="true">
                                        <font>
                                           <Font size="11.0" />
                                        </font>
                                     </Button>
+                                     <Button mnemonicParsing="false" onAction="#handleEditOrder" prefWidth="100.0" text="Edit Selected" wrapText="true">
+                                         <font>
+                                             <Font size="11.0" />
+                                         </font>
+                                     </Button>
                                     <Button mnemonicParsing="false" prefWidth="100.0" text="Export Single Customer List" wrapText="true">
                                        <font>
                                           <Font size="11.0" />
@@ -104,7 +109,7 @@
                         </HBox>
                      </children>
                   </VBox>
-                  <Button fx:id="addCustomerButton" mnemonicParsing="false" onAction="#handleAddCustomer" text="Add New Customer" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="10.0" />
+                  <Button fx:id="addCustomerButtonMain" mnemonicParsing="false" onAction="#handleAddCustomer" text="Add New Customer" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="10.0" />
                </children>
             </AnchorPane>
          </content></Tab>
@@ -120,7 +125,7 @@
                       <TableColumn fx:id="titlePriceColumn" editable="false" prefWidth="100.0" text="Price" />
                     </columns>
                   </TableView>
-                  <Button fx:id="addTitleButton" mnemonicParsing="false" onAction="#handleAddTitle" text="Add New Title" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="10.0" />
+                  <Button fx:id="addTitleButtonMain" mnemonicParsing="false" onAction="#handleAddTitle" text="Add New Title" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="10.0" />
                   <Button fx:id="resetFlagsButton" mnemonicParsing="false" onAction="#resetFlags" text="Reset New Release Flags" AnchorPane.leftAnchor="220.0" AnchorPane.topAnchor="10.0" />
                   <Button mnemonicParsing="false" text="Import CSV" AnchorPane.leftAnchor="410.0" AnchorPane.topAnchor="10.0" />
                   <VBox alignment="CENTER" layoutX="10.0" layoutY="10.0" prefHeight="749.0" prefWidth="476.0" spacing="10.0" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">

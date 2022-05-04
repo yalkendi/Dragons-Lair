@@ -665,8 +665,9 @@ public class Controller implements Initializable {
 
     /**
      * Runs when the Delete Customer button is pressed. Creates a dialog for the
-     * user to confirm deletion of the selected Customer. Re-renders the Customer
-     * table on window close.
+     * user to confirm deletion of the selected Customer. It also deletes every order
+     * linked to the customer. Re-renders the Customer and the order tables on window close.
+     *
      * @param event Event that triggered the method call.
      */
     @FXML
@@ -684,14 +685,33 @@ public class Controller implements Initializable {
                     "Confirm Delete",
                     "Are you sure you would like to delete customer " + firstName + " " + lastName + "?");
             if (confirmDelete) {
-                PreparedStatement s = null;
+                PreparedStatement s = null; // To prepare and execute the sql statement to delete the customer
                 String sql = "DELETE FROM Customers WHERE customerId = ?";
+                String sql2 = "DELETE FROM Orders WHERE customerId = ?";
+
+                try {
+                    s = conn.prepareStatement(sql2);
+                    s.setString(1, Integer.toString(customerId));
+
+                    int rowsAffected = s.executeUpdate();
+
+                    if (rowsAffected == 0 ) {
+                        //TODO: Throw an error
+                    } else if (rowsAffected > 1) {
+                        //TODO: Throw and error
+                    }
+                    s.close();
+                } catch (SQLException sqlExcept) {
+                    sqlExcept.printStackTrace();
+                }
+
                 try {
                     s = conn.prepareStatement(sql);
                     s.setString(1, Integer.toString(customerId));
+
                     int rowsAffected = s.executeUpdate();
 
-                    if (rowsAffected == 0) {
+                    if (rowsAffected == 0 ) {
                         //TODO: Throw an error
                     } else if (rowsAffected > 1) {
                         //TODO: Throw and error
@@ -706,14 +726,19 @@ public class Controller implements Initializable {
             customerLastNameText.setText("");
             customerPhoneText.setText("");
             customerEmailText.setText("");
+
+            titleTable.getItems().setAll(getTitles());
+            updateOrdersTable(customerTable.getSelectionModel().getSelectedItem());
+
+
             this.loadReportsTab();
         }
     }
 
     /**
      * Runs when the Delete Title button is pressed. Creates a dialog for the
-     * user to confirm deletion of the selected Title. Re-renders the Title
-     * table on window close.
+     * user to confirm deletion of the selected Title. It also deletes evry order
+     * linked to this title. Re-renders the Title and Order table on window close.
      * @param event Event that triggered the method call.
      */
     @FXML
@@ -732,6 +757,23 @@ public class Controller implements Initializable {
             if (confirmDelete) {
                 PreparedStatement s = null;
                 String sql = "DELETE FROM TITLES WHERE TITLEID = ?";
+                String sql2 = "DELETE FROM ORDERS WHERE TITLEID = ?";
+
+                try {
+                    s = conn.prepareStatement(sql2);
+                    s.setString(1, Integer.toString(titleId));
+                    int rowsAffected = s.executeUpdate();
+
+                    if (rowsAffected == 0) {
+                        //TODO: Throw an error
+                    } else if (rowsAffected > 1) {
+                        //TODO: Throw and error
+                    }
+                    s.close();
+                } catch (SQLException sqlExcept) {
+                    sqlExcept.printStackTrace();
+                }
+
                 try {
                     s = conn.prepareStatement(sql);
                     s.setString(1, Integer.toString(titleId));
@@ -751,6 +793,10 @@ public class Controller implements Initializable {
             titleTitleText.setText("");
             titlePriceText.setText("");
             titleNotesText.setText("");
+
+            titleTable.getItems().setAll(getTitles());
+            updateOrdersTable(customerTable.getSelectionModel().getSelectedItem());
+
             this.loadReportsTab();
         }
     }
@@ -832,6 +878,49 @@ public class Controller implements Initializable {
                     titleTitleText.setText("");
                     titlePriceText.setText("");
                     titleNotesText.setText("");
+                    this.loadReportsTab();
+                });
+                window.show();
+            } catch (Exception e) {
+                System.out.println("Error when opening window. This is probably a bug");
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * Runs when the Edit request(order) button is pressed. Creates a new window for
+     * the user to enter information and edit order. Re-renders the
+     * Orders table on window close.
+     * @param event Event that triggered the method call.
+     */
+    @FXML
+    void handleEditOrder(ActionEvent event) {
+        if (customerOrderTable.getSelectionModel().getSelectedItem() == null) {
+            AlertBox.display("Confirm Edit", "Please select an order.");
+        }
+        else {
+            try {
+                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("EditOrderBox.fxml"));
+                Parent root = fxmlLoader.load();
+
+                EditOrderController editOrderController = fxmlLoader.getController();
+                editOrderController.setConnection(conn);
+
+                editOrderController.populate(this.getTitles());
+                editOrderController.setOrder(customerOrderTable.getSelectionModel().getSelectedItem());
+
+                Stage window = new Stage();
+                window.initModality(Modality.APPLICATION_MODAL);
+                window.setTitle("Edit Order");
+                window.setResizable(false);
+
+                window.setHeight(285);
+                window.setWidth(400);
+
+                window.setScene(new Scene(root));
+                window.setOnHidden(e -> {
+                    updateOrdersTable(customerTable.getSelectionModel().getSelectedItem());
                     this.loadReportsTab();
                 });
                 window.show();
@@ -1164,4 +1253,3 @@ public class Controller implements Initializable {
 
     }
 }
-
