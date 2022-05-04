@@ -43,6 +43,12 @@ public class MainTest extends ApplicationTest {
         release(new MouseButton[]{});
     }
 
+    /**
+     * Test adding a new customer using the GUI interaction .
+     * @result 5 customers will be added without any errors
+     * The total number of customers after this method execute will
+     * increment by five from the original size.
+     */
     @Test
     public void testAddingCustomer () {
         int before = controller.getCustomers().size();
@@ -63,13 +69,17 @@ public class MainTest extends ApplicationTest {
             clickOn("#addCustomerButton");
         }
 
-
-
         int after = controller.getCustomers().size();
 
         assertEquals(before + added, after);
     }
 
+    /**
+     * Test adding a new Titels using the GUI interaction .
+     * @result 5 titles will be added without any errors.
+     * The total number of titles after this method execute will
+     * increment by five from the original size.
+     */
     @Test
     public void testAddingTitle () {
         int before = controller.getTitles().size();
@@ -93,6 +103,12 @@ public class MainTest extends ApplicationTest {
         assertEquals(before + added, after);
     }
 
+    /**
+     * Test deleting the 5 titles that was added by testAddingTitle ().
+     * @result 5 titles will be deleted without any errors
+     * The total number of titles after this method execute will
+     * decrement by five from the original size.
+     */
     @Test
     public void testDeletingTitle () {
         int before = controller.getTitles().size();
@@ -110,6 +126,12 @@ public class MainTest extends ApplicationTest {
         assertEquals(before - added, after);
     }
 
+    /**
+     * Test deleting the 5 customers that was added by testAddingCustomer().
+     * @result 5 customers will be deleted without any errors
+     * The total number of customers after this method execute will
+     * decrement by five from the original size.
+     */
     @Test
     public void testDeletingCustomer () {
         int before = controller.getCustomers().size();
