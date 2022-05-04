@@ -1,17 +1,20 @@
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.TextField;
+import javafx.fxml.Initializable;
+import javafx.scene.control.*;
 import javafx.stage.Stage;
+import javafx.util.converter.DefaultStringConverter;
 
+import java.net.URL;
 import java.sql.*;
+import java.util.ResourceBundle;
 
 /**
  * This Controller controls the New Customer window. It allows the window
  * to get the text that is entered in the fields and save it in the
  * database.
  */
-public class NewCustomerController{
+public class NewCustomerController implements Initializable {
 
     private Connection conn;
 
@@ -21,6 +24,12 @@ public class NewCustomerController{
     @FXML private TextField newCustomerFirstName;
     @FXML private TextField newCustomerLastName;
     @FXML private TextField newCustomerPhone;
+
+    @Override
+    public void initialize(URL url, ResourceBundle resourceBundle) {
+        TextFormatter<String> textFormatter = new TextFormatter<String>(new DefaultStringConverter(), "", new PhoneNumberFilter());
+        newCustomerPhone.setTextFormatter(textFormatter);
+    }
 
     /**
      * Creates a customer based off of the text fields and adds it
@@ -34,28 +43,44 @@ public class NewCustomerController{
         String phone = newCustomerPhone.getText();
         String email = newCustomerEmail.getText();
 
-        PreparedStatement s = null;
+        Statement get = null;
+        PreparedStatement insert = null;
         String sql = "INSERT INTO Customers (firstname, lastname, phone, email) VALUES (?, ?, ?, ?)";
         try
         {
-            s = conn.prepareStatement(sql);
-            s.setString(1, firstName);
-            s.setString(2, lastName);
-            s.setString(3, phone);
-            s.setString(4, email);
-            int rowsAffected = s.executeUpdate();
+            get = conn.createStatement();
+            ResultSet result = get.executeQuery("SELECT * FROM CUSTOMERS");
+            while (result.next()) {
+                String testFirstName = result.getString("FIRSTNAME");
+                String testLastName = result.getString("LASTNAME");
+                if (testFirstName.equals(firstName) && testLastName.equals(lastName)) {
+                    String testPhone = result.getString("PHONE");
+                    String testEmail = result.getString("EMAIL");
+                    if (testPhone.equals(phone) && testEmail.equals(email)) {
+                        Alert alert = new Alert(Alert.AlertType.WARNING, "Cannot create duplicate Customers. If two Customers have the exact same name, make sure they have different phones or emails.", ButtonType.OK);
+                        alert.setTitle("Duplicate Customer Entry");
+                        alert.setHeaderText("");
+                        alert.show();
+                        return;
+                    }
+                }
+            }
 
-            if (rowsAffected == 0) {
-                //TODO: Throw an error
-            }
-            else if (rowsAffected > 1) {
-                //TODO: Throw and error
-            }
-            s.close();
+            insert = conn.prepareStatement(sql);
+            insert.setString(1, firstName);
+            insert.setString(2, lastName);
+            insert.setString(3, phone);
+            insert.setString(4, email);
+            int rowsAffected = insert.executeUpdate();
+
+            insert.close();
         }
         catch (SQLException sqlExcept)
         {
-            sqlExcept.printStackTrace();
+            Alert alert = new Alert(Alert.AlertType.ERROR, "Database error. This is either a bug, or you messed with the DragonSlayer/derbyDB folder.", ButtonType.OK);
+            alert.setTitle("Database Error");
+            alert.setHeaderText("");
+            alert.show();
         }
         Stage window = (Stage) addCustomerButton.getScene().getWindow();
         window.close();
@@ -68,4 +93,5 @@ public class NewCustomerController{
     public void setConnection(Connection conn) {
         this.conn = conn;
     }
+
 }

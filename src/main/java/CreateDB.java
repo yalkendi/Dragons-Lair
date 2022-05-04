@@ -54,7 +54,8 @@ public class CreateDB {
                         Price int,
                         Notes varchar(8000),
                         FLAGGED boolean default false not null,
-                        DATE_FLAGGED date
+                        DATE_FLAGGED date,
+                        ISSUE_FLAGGED int,
                         PRIMARY KEY (TitleID)
                     )""");
             System.out.println("Created table Title");
@@ -74,7 +75,7 @@ public class CreateDB {
             try {
                 DriverManager.getConnection("jdbc:derby:;shutdown=true");
             } catch (SQLException se) {
-                if (((se.getErrorCode() == 5000)
+                if (((se.getErrorCode() == 50000)
                         && ("XJ015".equals(se.getSQLState())))) {
                     System.out.println("Derby shut down normally");
                 } else {
