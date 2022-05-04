@@ -90,6 +90,8 @@ public class Controller implements Initializable {
     @FXML private Text RequestQuantityText;
     @FXML private Text RequestNumCustomersText;
 
+    @FXML private TextArea databaseOverview;
+
     private static Connection conn = null;
 
     /**
@@ -219,12 +221,80 @@ public class Controller implements Initializable {
                 RequestQuantityText.setText(Integer.toString(newSelection.getFlaggedQuantity()));
                 RequestNumCustomersText.setText(Integer.toString(newSelection.getFlaggedNumRequests()));
 
-                //TODO: next load the table of customers who have requested the selected title
-
-                //updateRequestsTable(newSelection.getTitleId());
                 requestsTable.getItems().setAll(this.getRequests(newSelection.getTitleId(), newSelection.getFlaggedIssueNumber()));
             }
         });
+
+        getDatabaseInfo();
+    }
+
+    private void getDatabaseInfo() {
+        int numTitles = titleTable.getItems().size();
+        int numCustomers = customerTable.getItems().size();
+        int specialOrderNotes = 0;
+        int issueNumberRequests = getNumIssueRequests();
+        int titlesNotFlagged = 0;
+        int titlesNoRequests = 0;
+
+        LocalDate sixMonthsAgo = LocalDate.now().minusMonths(6);
+        for (Title title : titleTable.getItems()) {
+
+            if (title.getNotes() != "") {
+                specialOrderNotes++;
+            }
+            if (title.getDateFlagged() == null) {
+                titlesNotFlagged++;
+            }
+            else if (title.getDateFlagged().isBefore(sixMonthsAgo)) {
+                titlesNotFlagged++;
+            }
+            if (getNumberRequests(title.getId()) == 0) {
+                titlesNoRequests++;
+            }
+        }
+
+        databaseOverview.setText(String.format("""
+                Database currently has:
+                    Database currently has:
+                       %s Titles
+                       %s Customers
+                       %s Special Order Notes
+                       %s Pending Issue # Requests
+                       %s Titles have not been flagged for over six months
+                       %s Titles have 0 Customer Requests
+                """, numTitles, numCustomers, specialOrderNotes, issueNumberRequests, titlesNotFlagged, titlesNoRequests));
+    }
+
+    private int getNumIssueRequests() {
+        int numTitlesWithIssueNumbers = 0;
+
+        Statement s = null;
+        try
+        {
+            s = conn.createStatement();
+            ResultSet results = s.executeQuery("""
+                SELECT COUNT(*) AS TRIGGERED_ISSUE_COUNT FROM (
+                    SELECT DISTINCT TITLEID FROM (
+                                                     SELECT TITLES.TITLEID, ORDERS.ISSUE
+                                                     FROM TITLES
+                                                              INNER JOIN ORDERS ON ORDERS.TITLEID = TITLES.TITLEID
+                                                     WHERE ISSUE IS NOT NULL
+                                                 ) AS FLAGGED_ORDERS
+                    ) AS ISSUE_NOT_NULL_TITLES
+            """);
+
+            results.next();
+            numTitlesWithIssueNumbers = results.getInt(1);
+
+            results.close();
+            s.close();
+        }
+        catch (SQLException sqlExcept)
+        {
+            sqlExcept.printStackTrace();
+        }
+
+        return numTitlesWithIssueNumbers;
     }
 
     /**
@@ -352,7 +422,6 @@ public class Controller implements Initializable {
             t.flaggedProperty().addListener((obs, wasFlagged, isFlagged) -> {
                 if (isFlagged) {
                     try {
-                        System.out.println(isFlagged);
                         Statement s = conn.createStatement();
                         String sql = "SELECT * FROM ORDERS WHERE TITLEID = " + t.getId() + " AND ISSUE IS NOT NULL";
                         ResultSet results = s.executeQuery(sql);
@@ -651,6 +720,7 @@ public class Controller implements Initializable {
             window.setOnHidden( e -> {
                 customerTable.getItems().setAll(getCustomers());
                 this.loadReportsTab();
+                getDatabaseInfo();
             });
 
             window.show();
@@ -685,6 +755,7 @@ public class Controller implements Initializable {
             window.setOnHidden( e -> {
                 titleTable.getItems().setAll(getTitles());
                 this.loadReportsTab();
+                getDatabaseInfo();
             });
 
             window.show();
@@ -723,26 +794,14 @@ public class Controller implements Initializable {
                 try {
                     s = conn.prepareStatement(sql2);
                     s.setString(1, Integer.toString(customerId));
-
-                    int rowsAffected = s.executeUpdate();
-
-                    if (rowsAffected == 0 ) {
-                        //TODO: Throw an error
-                    } else if (rowsAffected > 1) {
-                        //TODO: Throw and error
-                    }
+                    s.executeUpdate();
                     s.close();
-                } catch (SQLException sqlExcept) {
-                    sqlExcept.printStackTrace();
-                }
 
-                try {
                     s = conn.prepareStatement(sql);
                     s.setString(1, Integer.toString(customerId));
-
-                    int rowsAffected = s.executeUpdate();
-
+                    s.executeUpdate();
                     s.close();
+
                 } catch (SQLException sqlExcept) {
                     sqlExcept.printStackTrace();
                 }
@@ -754,9 +813,11 @@ public class Controller implements Initializable {
             customerEmailText.setText("");
 
             titleTable.getItems().setAll(getTitles());
-            updateOrdersTable(customerTable.getSelectionModel().getSelectedItem());
+            if (customerTable.getSelectionModel().getSelectedItem() != null) {
+                updateOrdersTable(customerTable.getSelectionModel().getSelectedItem());
+            }
 
-
+            getDatabaseInfo();
             this.loadReportsTab();
         }
     }
@@ -788,29 +849,14 @@ public class Controller implements Initializable {
                 try {
                     s = conn.prepareStatement(sql2);
                     s.setString(1, Integer.toString(titleId));
-                    int rowsAffected = s.executeUpdate();
-
-                    if (rowsAffected == 0) {
-                        //TODO: Throw an error
-                    } else if (rowsAffected > 1) {
-                        //TODO: Throw and error
-                    }
+                    s.executeUpdate();
                     s.close();
-                } catch (SQLException sqlExcept) {
-                    sqlExcept.printStackTrace();
-                }
 
-                try {
                     s = conn.prepareStatement(sql);
                     s.setString(1, Integer.toString(titleId));
-                    int rowsAffected = s.executeUpdate();
-
-                    if (rowsAffected == 0) {
-                        //TODO: Throw an error
-                    } else if (rowsAffected > 1) {
-                        //TODO: Throw and error
-                    }
+                    s.executeUpdate();
                     s.close();
+
                 } catch (SQLException sqlExcept) {
                     sqlExcept.printStackTrace();
                 }
@@ -821,8 +867,11 @@ public class Controller implements Initializable {
             titleNotesText.setText("");
 
             titleTable.getItems().setAll(getTitles());
-            updateOrdersTable(customerTable.getSelectionModel().getSelectedItem());
+            if (customerTable.getSelectionModel().getSelectedItem() != null) {
+                updateOrdersTable(customerTable.getSelectionModel().getSelectedItem());
+            }
 
+            getDatabaseInfo();
             this.loadReportsTab();
         }
     }
@@ -861,6 +910,7 @@ public class Controller implements Initializable {
                     customerPhoneText.setText("");
                     customerEmailText.setText("");
                     this.loadReportsTab();
+                    getDatabaseInfo();
                 });
                 window.show();
             } catch (Exception e) {
@@ -905,6 +955,7 @@ public class Controller implements Initializable {
                     titlePriceText.setText("");
                     titleNotesText.setText("");
                     this.loadReportsTab();
+                    getDatabaseInfo();
                 });
                 window.show();
             } catch (Exception e) {
@@ -948,6 +999,7 @@ public class Controller implements Initializable {
                 window.setOnHidden(e -> {
                     updateOrdersTable(customerTable.getSelectionModel().getSelectedItem());
                     this.loadReportsTab();
+                    getDatabaseInfo();
                 });
                 window.show();
             } catch (Exception e) {
@@ -989,6 +1041,7 @@ public class Controller implements Initializable {
                 window.setOnHidden(e ->  {
                     updateOrdersTable(customerTable.getSelectionModel().getSelectedItem());
                     this.loadReportsTab();
+                    getDatabaseInfo();
                 });
                 window.show();
             } catch (Exception e) {
@@ -1702,15 +1755,20 @@ public class Controller implements Initializable {
                     "Are you sure you would like to delete " + title + "?");
             if (confirmDelete) {
                 PreparedStatement s = null;
-                String sql = "DELETE FROM ORDERS WHERE CUSTOMERID = ? AND TITLEID = ? AND QUANTITY = ? AND ISSUE = ?";
+                String sql;
+                if (issue == 0) {
+                    sql = "DELETE FROM ORDERS WHERE CUSTOMERID = ? AND TITLEID = ? AND ISSUE IS NULL";
+                } else {
+                    sql = "DELETE FROM ORDERS WHERE CUSTOMERID = ? AND TITLEID = ? AND ISSUE = ?";
+                }
                 try {
                     s = conn.prepareStatement(sql);
-                    s.setString(1, Integer.toString(customerId));
-                    s.setString(2, Integer.toString(titleId));
-                    s.setString(3, Integer.toString(quantity));
-                    s.setString(4, Integer.toString(issue));
-                    int rowsAffected = s.executeUpdate();
-
+                    s.setInt(1, customerId);
+                    s.setInt(2, titleId);
+                    if (issue != 0) {
+                        s.setInt(3, issue);
+                    }
+                    s.executeUpdate();
                     s.close();
                 } catch (SQLException sqlExcept) {
                     sqlExcept.printStackTrace();
@@ -1719,6 +1777,7 @@ public class Controller implements Initializable {
             titleTable.getItems().setAll(getTitles());
             updateOrdersTable(customerTable.getSelectionModel().getSelectedItem());
             this.loadReportsTab();
+            getDatabaseInfo();
         }
     }
 
@@ -1791,6 +1850,7 @@ public class Controller implements Initializable {
         this.unsaved = false;
         titleTable.getItems().setAll(getTitles());
         this.loadReportsTab();
+        getDatabaseInfo();
     }
 
     /**
@@ -1817,6 +1877,7 @@ public class Controller implements Initializable {
                     }
                     titleTable.getItems().setAll(getTitles());
                     this.loadReportsTab();
+                    getDatabaseInfo();
                 });
         this.unsaved = false;
     }

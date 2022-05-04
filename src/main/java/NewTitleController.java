@@ -100,7 +100,6 @@ public class NewTitleController{
         }
         priceDollars = priceDollars.replace(".", "");
         priceDollars = priceDollars.replaceAll(",", "");
-        System.out.println(priceDollars);
         return priceDollars;
     }
 

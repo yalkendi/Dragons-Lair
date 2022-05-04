@@ -190,7 +190,7 @@
                         <content>
                             <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                 <children>
-                                    <HBox layoutX="11.0" layoutY="6.0" prefHeight="93.0" prefWidth="488.0">
+                                    <HBox layoutX="11.0" layoutY="6.0" prefHeight="93.0" prefWidth="683.0">
                                         <children>
                                             <GridPane>
                                                 <columnConstraints>
@@ -222,6 +222,14 @@
                                                     <Insets bottom="5.0" left="50.0" right="5.0" top="20.0" />
                                                 </HBox.margin>
                                             </Button>
+                                    <Text strokeType="OUTSIDE" strokeWidth="0.0" text="*Titles with 0 Customer Requests will be ignored" wrappingWidth="150.0">
+                                       <HBox.margin>
+                                          <Insets top="20.0" />
+                                       </HBox.margin>
+                                       <font>
+                                          <Font size="11.0" />
+                                       </font>
+                                    </Text>
                                         </children>
                                     </HBox>
                                     <TableView fx:id="flaggedTable" layoutY="105.0" prefHeight="524.0" prefWidth="490.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="500.0" AnchorPane.topAnchor="105.0">
@@ -280,10 +288,10 @@
                         <content>
                             <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                 <children>
-                                    <HBox layoutX="7.0" layoutY="10.0" prefHeight="162.0" prefWidth="626.0">
+                                    <HBox layoutX="7.0" layoutY="10.0" prefHeight="162.0" prefWidth="626.0" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="10.0">
                                         <children>
-                                            <TextArea editable="false" prefHeight="162.0" prefWidth="295.0" text="Database currently has:&#10;   X Titles&#10;   X Customers&#10;   X Special Order Notes&#10;   X Pending Issue # Requests&#10;   X Titles have not been flagged for over six months&#10;   X Titles have 0 Customer Requests&#10;" />
-                                            <VBox prefHeight="162.0" prefWidth="272.0">
+                                            <TextArea fx:id="databaseOverview" editable="false" prefHeight="162.0" prefWidth="313.0" text="Database currently has:&#10;   X Titles&#10;   X Customers&#10;   X Special Order Notes&#10;   X Pending Issue # Requests&#10;   X Titles have not been flagged for over six months&#10;   X Titles have 0 Customer Requests&#10;" />
+                                            <VBox prefHeight="162.0" prefWidth="266.0">
                                                 <children>
                                                     <Button fx:id="exportAllTitlesButton" mnemonicParsing="false" onAction="#handleExportAllTitles" text="Export All Titles with Qtys">
                                                         <VBox.margin>
@@ -314,7 +322,7 @@
                                             </VBox>
                                         </children>
                                     </HBox>
-                                    <TableView layoutY="175.0" prefHeight="442.0" prefWidth="538.0">
+                                    <TableView layoutY="175.0" prefHeight="442.0" prefWidth="538.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="450.0" AnchorPane.topAnchor="190.0">
                                         <columns>
                                             <TableColumn prefWidth="171.3168179988861" text="Title" />
                                             <TableColumn prefWidth="44.183197021484375" text="Qty" />

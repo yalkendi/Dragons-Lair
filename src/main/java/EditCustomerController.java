@@ -44,6 +44,13 @@ public class EditCustomerController implements Initializable {
         String lastName = updateCustomerLastName.getText();
         String phone = updateCustomerPhone.getText();
         String email = updateCustomerEmail.getText();
+        if (phone.length() < 12) {
+            Alert alert = new Alert(Alert.AlertType.WARNING, "Phone number must be 10 digits", ButtonType.OK);
+            alert.setTitle("Invalid Phone Number");
+            alert.setHeaderText("");
+            alert.show();
+            return;
+        }
 
         Statement get = null;
         PreparedStatement update = null;
@@ -110,7 +117,11 @@ public class EditCustomerController implements Initializable {
         this.customer = customer;
         updateCustomerFirstName.setText(customer.getFirstName());
         updateCustomerLastName.setText(customer.getLastName());
-        updateCustomerPhone.setText(customer.getPhone());
+        if (customer.getPhone().length() == 12) {
+            String phone = customer.getPhone().substring(0, 3) + customer.getPhone().substring(4, 7) + customer.getPhone().substring(8);
+            System.out.println(phone);
+            updateCustomerPhone.setText(phone);
+        }
         updateCustomerEmail.setText(customer.getEmail());
     }
 }

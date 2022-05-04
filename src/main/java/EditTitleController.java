@@ -49,20 +49,6 @@ public class EditTitleController{
 
             try
             {
-                get = conn.createStatement();
-                ResultSet result = get.executeQuery("SELECT TITLE FROM TITLES");
-                while (result.next()) {
-                    String testTitle = result.getString("TITLE");
-                    if (testTitle.equals(titleText)) {
-                        Alert alert = new Alert(Alert.AlertType.WARNING, "Cannot create multiple Titles with exactly the same name.", ButtonType.OK);
-                        alert.setTitle("Duplicate Title Entry");
-                        alert.setHeaderText("");
-                        alert.show();
-                        return;
-                    }
-                }
-
-
                 update = conn.prepareStatement(sql);
                 update.setString(1, titleText);
                 update.setObject(2, dollarsToCents(price), Types.INTEGER);
@@ -99,7 +85,9 @@ public class EditTitleController{
     public void setTitle(Title title) {
         this.title = title;
         updateTitleTitle.setText(title.getTitle());
-        updateTitlePrice.setText(title.getPriceDollars());
+        if (title.getPrice() > 0) {
+            updateTitlePrice.setText(title.getPriceDollars());
+        }
         updateTitleNotes.setText(title.getNotes());
     }
 
@@ -130,7 +118,6 @@ public class EditTitleController{
         }
         priceDollars = priceDollars.replace(".", "");
         priceDollars = priceDollars.replaceAll(",", "");
-        System.out.println(priceDollars);
         return priceDollars;
     }
 }

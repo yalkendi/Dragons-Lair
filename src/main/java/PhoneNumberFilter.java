@@ -39,9 +39,6 @@ public class PhoneNumberFilter implements UnaryOperator<TextFormatter.Change> {
         if (numbers.length() == 0) {
             return "";
         }
-//        if (numbers.length() < 4) {
-//            return "(" + numbers;
-//        }
         if (numbers.length() < 7) {
             return numbers.replaceFirst("(\\d{3})(\\d+)", "$1-$2");
         }
