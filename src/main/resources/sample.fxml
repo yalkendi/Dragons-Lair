@@ -17,7 +17,7 @@
 <?import javafx.scene.text.Font?>
 <?import javafx.scene.text.Text?>
 
-<TabPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="700.0" prefWidth="1000.0" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller">
+<TabPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="700.0" prefWidth="1000.0" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller">
   <tabs>
     <Tab text="Customers">
          <content>
@@ -116,8 +116,8 @@
                     <columns>
                         <TableColumn fx:id="titleFlaggedColumn" prefWidth="51.0" text="Flagged" />
                       <TableColumn fx:id="titleTitleColumn" editable="false" prefWidth="224.0" text="Title" />
-                        <TableColumn fx:id="titleNotesColumn" editable="false" prefWidth="100.0" text="Notes" />
                       <TableColumn fx:id="titlePriceColumn" editable="false" prefWidth="100.0" text="Price" />
+                        <TableColumn fx:id="titleNotesColumn" editable="false" prefWidth="100.0" text="Notes" />
                     </columns>
                   </TableView>
                   <Button fx:id="addTitleButton" mnemonicParsing="false" onAction="#handleAddTitle" text="Add New Title" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="10.0" />
@@ -209,7 +209,7 @@
                                                     <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Titles Have No Customer Requests" GridPane.columnIndex="1" GridPane.rowIndex="3" />
                                                 </children>
                                             </GridPane>
-                                            <Button fx:id="exportNewWeekFlagsCustomerRequestsButton" alignment="CENTER_RIGHT" mnemonicParsing="false" prefHeight="39.0" prefWidth="192.0" text="Export New Week Flags Customer Requests" textAlignment="CENTER" wrapText="true">
+                                            <Button fx:id="exportNewWeekFlagsCustomerRequestsButton" alignment="CENTER_RIGHT" mnemonicParsing="false" onAction="#handleExportFlaggedTitles" prefHeight="44.0" prefWidth="192.0" text="Export New Week Flags Customer Requests" textAlignment="CENTER" wrapText="true">
                                                 <font>
                                                     <Font size="12.0" />
                                                 </font>
@@ -253,7 +253,7 @@
                                                     </GridPane>
                                                     <ButtonBar prefHeight="40.0" prefWidth="200.0">
                                                         <buttons>
-                                                            <Button fx:id="exportSingleTitleRequestListButton" mnemonicParsing="false" onAction="#handleExportSingleTitle" text="Export Single Title Request List" />
+                                                            <Button fx:id="exportSingleTitleRequestListButton" mnemonicParsing="false" onAction="#handleExportSingleTitleFlaggedTable" text="Export Single Title Request List" />
                                                         </buttons>
                                                     </ButtonBar>
                                                 </children>
@@ -285,7 +285,7 @@
                                                             <Insets bottom="5.0" left="25.0" top="5.0" />
                                                         </VBox.margin>
                                                     </Button>
-                                                    <Button mnemonicParsing="false" text="Export Customer List">
+                                                    <Button mnemonicParsing="false" onAction="#handleExportCustomerList" text="Export Customer List">
                                                         <VBox.margin>
                                                             <Insets bottom="5.0" left="25.0" />
                                                         </VBox.margin>
@@ -319,11 +319,6 @@
                                     </TableView>
                                 </children>
                             </AnchorPane>
-                        </content>
-                    </Tab>
-                    <Tab text="Reports History">
-                        <content>
-                            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
                         </content>
                     </Tab>
                 </tabs>

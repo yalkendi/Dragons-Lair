@@ -1,6 +1,8 @@
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextField;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
@@ -37,23 +39,36 @@ public class NewTitleController{
         if(isValidPrice(newTitlePrice.getText())) {
             String price = newTitlePrice.getText();
 
-            PreparedStatement s = null;
+            Statement get = null;
+            PreparedStatement insert = null;
             String sql = "INSERT INTO Titles (TITLE, PRICE, NOTES) VALUES (?, ?, ?)";
-            try {
-                s = conn.prepareStatement(sql);
-                s.setString(1, title);
-                s.setObject(2, dollarsToCents(price), Types.INTEGER);
-                s.setString(3, notes);
-                int rowsAffected = s.executeUpdate();
 
-                if (rowsAffected == 0) {
-                    //TODO: Throw an error
-                } else if (rowsAffected > 1) {
-                    //TODO: Throw and error
+            try {
+                get = conn.createStatement();
+                ResultSet result = get.executeQuery("SELECT TITLE FROM TITLES");
+                while (result.next()) {
+                    String testTitle = result.getString("TITLE");
+                    if (testTitle.equals(title)) {
+                        Alert alert = new Alert(Alert.AlertType.WARNING, "Cannot create multiple Titles with exactly the same name.", ButtonType.OK);
+                        alert.setTitle("Duplicate Title Entry");
+                        alert.setHeaderText("");
+                        alert.show();
+                        return;
+                    }
                 }
-                s.close();
+
+                insert = conn.prepareStatement(sql);
+                insert.setString(1, title);
+                insert.setObject(2, dollarsToCents(price), Types.INTEGER);
+                insert.setString(3, notes);
+                int rowsAffected = insert.executeUpdate();
+
+                insert.close();
             } catch (SQLException sqlExcept) {
-                sqlExcept.printStackTrace();
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Database error. This is either a bug, or you messed with the DragonSlayer/derbyDB folder.", ButtonType.OK);
+                alert.setTitle("Database Error");
+                alert.setHeaderText("");
+                alert.show();
             }
             Stage window = (Stage) addTitleButton.getScene().getWindow();
             window.close();
