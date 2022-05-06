@@ -470,24 +470,24 @@ public class Controller implements Initializable {
             s = conn.createStatement();
 
             ResultSet results = s.executeQuery("""
-            SELECT TITLEID, TITLE, ISSUE, PRICE, SUM(QUANTITY) AS QUANTITY, COUNT(CUSTOMERID) AS NUM_REQUESTS FROM (
-                                                                                                                    SELECT TITLES.TITLEID, TITLES.TITLE, ORDERS.CUSTOMERID, ORDERS.ISSUE, TITLES.PRICE, ORDERS.QUANTITY
-                                                                                                                    from TITLES
-                                                                                                                             LEFT JOIN ORDERS ON ORDERS.TITLEID = TITLES.TITLEID
-                                                                                                                    WHERE TITLES.FLAGGED = true AND (ISSUE = ISSUE_FLAGGED OR ISSUE IS NULL)
-                                                                                                                ) AS FLAGGED_ORDERS
-            GROUP BY TITLEID, TITLE, ISSUE, PRICE
+            SELECT TITLEID, TITLE, ISSUE_FLAGGED, PRICE, SUM(QUANTITY) AS QUANTITY, COUNT(CUSTOMERID) AS NUM_REQUESTS FROM (
+                                                                                                                       SELECT TITLES.TITLEID, TITLES.TITLE, TITLES.ISSUE_FLAGGED, ORDERS.CUSTOMERID, ORDERS.ISSUE, TITLES.PRICE, ORDERS.QUANTITY
+                                                                                                                       from TITLES
+                                                                                                                                LEFT JOIN ORDERS ON ORDERS.TITLEID = TITLES.TITLEID
+                                                                                                                       WHERE TITLES.FLAGGED = true AND (ISSUE = ISSUE_FLAGGED OR ISSUE IS NULL)
+                                                                                                                   ) AS FLAGGED_ORDERS
+            GROUP BY TITLEID, TITLE, ISSUE, PRICE, ISSUE_FLAGGED
             ORDER BY TITLE, ISSUE
             """);
             
             while(results.next())
             {
-                int titleId = results.getInt(1);
-                String title = results.getString(2);
-                int issue = results.getInt(3);
-                int price= results.getInt(4);
-                int quantity = results.getInt(5);
-                int numRequests = results.getInt(6);
+                int titleId = results.getInt("TITLEID");
+                String title = results.getString("TITLE");
+                int issue = results.getInt("ISSUE_FLAGGED");
+                int price= results.getInt("PRICE");
+                int quantity = results.getInt("QUANTITY");
+                int numRequests = results.getInt("NUM_REQUESTS");
 
                 flaggedTitles.add(new FlaggedTable( titleId, title, issue, price, quantity, numRequests));
 
@@ -518,7 +518,7 @@ public class Controller implements Initializable {
                 sql = String.format("""
                         SELECT CUSTOMERS.LASTNAME, CUSTOMERS.FIRSTNAME, ORDERS.QUANTITY FROM CUSTOMERS
                         INNER JOIN ORDERS ON ORDERS.CUSTOMERID=CUSTOMERS.CUSTOMERID
-                        WHERE ORDERS.TITLEID=%s AND ORDERS.ISSUE=%s
+                        WHERE ORDERS.TITLEID=%s AND (ORDERS.ISSUE=%s OR ORDERS.ISSUE IS NULL)
                         ORDER BY CUSTOMERS.LASTNAME
                         """, titleId, issue);
             } else {
