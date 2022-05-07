@@ -49,11 +49,20 @@ public class EditOrderController {
     void updateOrder(ActionEvent event) {
 
         PreparedStatement s = null;
-        String sql = """
+        String sql = "";
+        if (Integer.parseInt(prevIssue) == 0) {
+            sql = """
             UPDATE Orders
-            SET customerId = ?, titleId = ?, quantity = ?, issue = ?
+            SET titleId = ?, quantity = ?, issue = ?
+            WHERE customerId = ? AND titleId = ? AND quantity = ? AND issue IS NULL
+            """;
+        } else {
+            sql = """
+            UPDATE Orders
+            SET titleId = ?, quantity = ?, issue = ?
             WHERE customerId = ? AND titleId = ? AND quantity = ? AND issue = ?
             """;
+        }
 
         orderQuantityErrorText.setVisible(false);
         orderTitleErrorText.setVisible(false);
@@ -77,24 +86,17 @@ public class EditOrderController {
 
             try {
                 s = conn.prepareStatement(sql);
-                s.setString(1, Integer.toString(customerId));
-                s.setString(2, Integer.toString(titleID));
-                s.setString(3, quantity);
-                s.setObject(4, issue, Types.INTEGER);
+                s.setString(1, Integer.toString(titleID));
+                s.setString(2, quantity);
+                s.setObject(3, issue, Types.INTEGER);
 
-                s.setString(5, prevCustomerId);
-                s.setString(6, prevTitle);
-                s.setString(7, prevQuantity);
-                s.setObject(8, prevIssue, Types.INTEGER);
-
-
-                int rowsAffected = s.executeUpdate();
-
-                if (rowsAffected == 0) {
-                    //TODO: Throw an error
-                } else if (rowsAffected > 1) {
-                    //TODO: Throw an error
+                s.setString(4, prevCustomerId);
+                s.setString(5, prevTitle);
+                s.setString(6, prevQuantity);
+                if (Integer.parseInt(prevIssue) != 0) {
+                    s.setObject(7, prevIssue, Types.INTEGER);
                 }
+                int rowsAffected = s.executeUpdate();
                 s.close();
             } catch (SQLException sqlExcept) {
                 sqlExcept.printStackTrace();
@@ -127,8 +129,10 @@ public class EditOrderController {
 
         setTitle.setItems(this.titlesStr);
         setQuantity.setText(String.valueOf(order.getQuantity()));
-        setIssue.setText(String.valueOf(order.getIssue()));
-
+        if (order.getIssue() > 0)
+        {
+            setIssue.setText(String.valueOf(order.getIssue()));
+        }
         setTitle.getSelectionModel().select(order.getTitleName());
         setTitle.setEditable(true);
         FxUtilTest.autoCompleteComboBoxPlus(setTitle, (typedText, itemToCompare) -> itemToCompare.toLowerCase().contains(typedText.toLowerCase()) || itemToCompare.equals(typedText));

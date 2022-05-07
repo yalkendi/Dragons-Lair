@@ -95,7 +95,7 @@
                                              <Font size="11.0" />
                                          </font>
                                      </Button>
-                                    <Button mnemonicParsing="false" prefWidth="100.0" text="Export Single Customer List" wrapText="true">
+                                    <Button mnemonicParsing="false" onAction="#handleExportSingleCustomer" prefWidth="100.0" text="Export Single Customer List" wrapText="true">
                                        <font>
                                           <Font size="11.0" />
                                        </font>
@@ -121,13 +121,12 @@
                     <columns>
                         <TableColumn fx:id="titleFlaggedColumn" prefWidth="51.0" text="Flagged" />
                       <TableColumn fx:id="titleTitleColumn" editable="false" prefWidth="224.0" text="Title" />
-                        <TableColumn fx:id="titleNotesColumn" editable="false" prefWidth="100.0" text="Notes" />
                       <TableColumn fx:id="titlePriceColumn" editable="false" prefWidth="100.0" text="Price" />
+                        <TableColumn fx:id="titleNotesColumn" editable="false" prefWidth="100.0" text="Notes" />
                     </columns>
                   </TableView>
                   <Button fx:id="addTitleButtonMain" mnemonicParsing="false" onAction="#handleAddTitle" text="Add New Title" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="10.0" />
                   <Button fx:id="resetFlagsButton" mnemonicParsing="false" onAction="#resetFlags" text="Reset New Release Flags" AnchorPane.leftAnchor="220.0" AnchorPane.topAnchor="10.0" />
-                  <Button mnemonicParsing="false" text="Import CSV" AnchorPane.leftAnchor="410.0" AnchorPane.topAnchor="10.0" />
                   <VBox alignment="CENTER" layoutX="10.0" layoutY="10.0" prefHeight="749.0" prefWidth="476.0" spacing="10.0" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
                      <children>
                         <HBox alignment="CENTER" prefHeight="52.0" prefWidth="476.0" spacing="20.0">
@@ -168,7 +167,7 @@
                         <HBox prefHeight="443.0" prefWidth="476.0" spacing="10.0">
                            <children>
                               <Text fx:id="titleNumberRequestsText" strokeType="OUTSIDE" strokeWidth="0.0" wrappingWidth="213.4580078125" />
-                              <Button fx:id="singleTitleReportButton" alignment="CENTER" contentDisplay="CENTER" mnemonicParsing="false" onAction="#handleExportSingleTitle" prefHeight="41.0" prefWidth="180.0" text="Export Single Title Request List" textAlignment="CENTER" wrapText="true" />
+                              <Button fx:id="singleTitleReportButton" alignment="CENTER" contentDisplay="CENTER" mnemonicParsing="false" onAction="#handleExportSingleTitle" prefHeight="41.0" prefWidth="199.0" text="Export Single Title Request List" textAlignment="CENTER" wrapText="true" />
                            </children>
                            <VBox.margin>
                               <Insets />
@@ -191,12 +190,12 @@
                         <content>
                             <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                 <children>
-                                    <HBox layoutX="11.0" layoutY="6.0" prefHeight="93.0" prefWidth="488.0">
+                                    <HBox layoutX="11.0" layoutY="6.0" prefHeight="93.0" prefWidth="683.0">
                                         <children>
                                             <GridPane>
                                                 <columnConstraints>
-                                                    <ColumnConstraints hgrow="SOMETIMES" maxWidth="100.0" minWidth="10.0" prefWidth="54.79270935058594" />
-                                                    <ColumnConstraints hgrow="SOMETIMES" maxWidth="145.20729064941406" minWidth="10.0" prefWidth="145.20729064941406" />
+                                                    <ColumnConstraints hgrow="SOMETIMES" maxWidth="100.0" minWidth="10.0" prefWidth="37.0" />
+                                                    <ColumnConstraints hgrow="SOMETIMES" maxWidth="178.5" minWidth="10.0" prefWidth="163.5" />
                                                 </columnConstraints>
                                                 <rowConstraints>
                                                     <RowConstraints maxHeight="32.531402587890625" minHeight="10.0" prefHeight="20.157005310058594" vgrow="SOMETIMES" />
@@ -206,16 +205,16 @@
                                                 </rowConstraints>
                                                 <children>
                                                     <Text fx:id="FlaggedTitlesTotalText" strokeType="OUTSIDE" strokeWidth="0.0" />
-                                                    <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Titles Currently Flagged" GridPane.columnIndex="1" />
+                                                    <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Titles Currently Flagged For" wrappingWidth="156.62060546875" GridPane.columnIndex="1" />
                                                     <Text fx:id="FlaggedTitlesTotalCustomersText" strokeType="OUTSIDE" strokeWidth="0.0" GridPane.rowIndex="1" />
                                                     <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Customers" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                                                     <Text fx:id="FlaggedIssueNumbersText" strokeType="OUTSIDE" strokeWidth="0.0" GridPane.rowIndex="2" />
-                                                    <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Titles have triggered Issue #'s" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                                    <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Titles Have Triggered Issue #'s" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                                                     <Text fx:id="FlaggedNoRequestsText" strokeType="OUTSIDE" strokeWidth="0.0" GridPane.rowIndex="3" />
                                                     <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Titles Have No Customer Requests" GridPane.columnIndex="1" GridPane.rowIndex="3" />
                                                 </children>
                                             </GridPane>
-                                            <Button fx:id="exportNewWeekFlagsCustomerRequestsButton" alignment="CENTER_RIGHT" mnemonicParsing="false" prefHeight="39.0" prefWidth="192.0" text="Export New Week Flags Customer Requests" textAlignment="CENTER" wrapText="true">
+                                            <Button fx:id="exportNewWeekFlagsCustomerRequestsButton" alignment="CENTER_RIGHT" mnemonicParsing="false" onAction="#handleExportFlaggedTitles" prefHeight="44.0" prefWidth="192.0" text="Export New Week Flags Customer Requests" textAlignment="CENTER" wrapText="true">
                                                 <font>
                                                     <Font size="12.0" />
                                                 </font>
@@ -223,9 +222,17 @@
                                                     <Insets bottom="5.0" left="50.0" right="5.0" top="20.0" />
                                                 </HBox.margin>
                                             </Button>
+                                    <Text strokeType="OUTSIDE" strokeWidth="0.0" text="*Titles with 0 Customer Requests will be ignored" wrappingWidth="150.0">
+                                       <HBox.margin>
+                                          <Insets top="20.0" />
+                                       </HBox.margin>
+                                       <font>
+                                          <Font size="11.0" />
+                                       </font>
+                                    </Text>
                                         </children>
                                     </HBox>
-                                    <TableView fx:id="flaggedTable" layoutY="105.0" prefHeight="524.0" prefWidth="490.0" AnchorPane.bottomAnchor="8.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="500.0" AnchorPane.topAnchor="105.0">
+                                    <TableView fx:id="flaggedTable" layoutY="105.0" prefHeight="524.0" prefWidth="490.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="500.0" AnchorPane.topAnchor="105.0">
                                         <columns>
                                             <TableColumn fx:id="flaggedTitleColumn" prefWidth="115.0" text="Title" />
                                             <TableColumn fx:id="flaggedIssueColumn" prefWidth="65.0" text="Issue #" />
@@ -234,7 +241,7 @@
                                             <TableColumn fx:id="flaggedNumRequestsColumn" prefWidth="113.0" text="# of Requests" />
                                         </columns>
                                     </TableView>
-                                    <VBox layoutX="509.0" layoutY="105.0" prefHeight="525.0" prefWidth="482.0">
+                                    <VBox layoutX="509.0" layoutY="105.0" prefHeight="525.0" prefWidth="482.0" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="10.0">
                                         <children>
                                             <HBox alignment="CENTER_LEFT" prefHeight="104.0" prefWidth="482.0">
                                                 <children>
@@ -259,7 +266,7 @@
                                                     </GridPane>
                                                     <ButtonBar prefHeight="40.0" prefWidth="200.0">
                                                         <buttons>
-                                                            <Button fx:id="exportSingleTitleRequestListButton" mnemonicParsing="false" onAction="#handleExportSingleTitle" text="Export Single Title Request List" />
+                                                            <Button fx:id="exportSingleTitleRequestListButton" mnemonicParsing="false" onAction="#handleExportSingleTitleFlaggedTable" text="Export Single Title Request List" />
                                                         </buttons>
                                                     </ButtonBar>
                                                 </children>
@@ -281,55 +288,43 @@
                         <content>
                             <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                 <children>
-                                    <HBox layoutX="7.0" layoutY="10.0" prefHeight="162.0" prefWidth="626.0">
+                                    <HBox layoutX="7.0" layoutY="10.0" prefHeight="162.0" prefWidth="666.0" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="10.0">
                                         <children>
-                                            <TextArea editable="false" prefHeight="162.0" prefWidth="295.0" text="Database currently has:&#10;   X Titles&#10;   X Customers&#10;   X Special Order Notes&#10;   X Pending Issue # Requests&#10;   X Titles have not been flagged for over six months&#10;   X Titles have 0 Customer Requests&#10;" />
-                                            <VBox prefHeight="162.0" prefWidth="272.0">
-                                                <children>
-                                                    <Button mnemonicParsing="false" text="Export All Titles with Qtys">
-                                                        <VBox.margin>
-                                                            <Insets bottom="5.0" left="25.0" top="5.0" />
-                                                        </VBox.margin>
-                                                    </Button>
-                                                    <Button mnemonicParsing="false" text="Export Customer List">
-                                                        <VBox.margin>
-                                                            <Insets bottom="5.0" left="25.0" />
-                                                        </VBox.margin>
-                                                    </Button>
-                                                    <Button mnemonicParsing="false" text="Export All Pending Issue #'s">
-                                                        <VBox.margin>
-                                                            <Insets bottom="5.0" left="25.0" />
-                                                        </VBox.margin>
-                                                    </Button>
-                                                    <Button mnemonicParsing="false" text="Export Stalled Titles">
-                                                        <VBox.margin>
-                                                            <Insets bottom="5.0" left="25.0" />
-                                                        </VBox.margin>
-                                                    </Button>
-                                                    <Button mnemonicParsing="false" text="Export 0 Request Titles">
-                                                        <VBox.margin>
-                                                            <Insets left="25.0" />
-                                                        </VBox.margin>
-                                                    </Button>
-                                                </children>
-                                            </VBox>
+                                            <TextArea fx:id="databaseOverview" editable="false" prefHeight="162.0" prefWidth="392.0" text="Database currently has:&#10;   X Titles&#10;   X Customers&#10;   X Special Order Notes&#10;   X Pending Issue # Requests&#10;   X Titles have not been flagged for over six months&#10;   X Titles have 0 Customer Requests&#10;" />
+                                    <GridPane prefHeight="162.0" prefWidth="419.0">
+                                      <columnConstraints>
+                                        <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                                        <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                                      </columnConstraints>
+                                      <rowConstraints>
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                      </rowConstraints>
+                                       <children>
+                                                    <Button fx:id="exportAllTitlesButton" mnemonicParsing="false" onAction="#handleExportAllRequestsByTitle" prefWidth="166.0" text="Export All Requests by Title" />
+                                                    <Button mnemonicParsing="false" onAction="#handleExportCustomerList" prefHeight="26.0" prefWidth="166.0" text="Export Customer List" GridPane.rowIndex="1" />
+                                                    <Button mnemonicParsing="false" onAction="#handleExportPendingIssueNumbers" text="Export All Pending Issue #'s" GridPane.rowIndex="2" />
+                                                    <Button mnemonicParsing="false" onAction="#handleExportStalledTitles" prefWidth="166.0" text="Export Stalled Titles" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                                    <Button mnemonicParsing="false" onAction="#handleExportNoRequestTitles" prefWidth="166.0" text="Export 0 Request Titles" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                          <Button mnemonicParsing="false" onAction="#handleExportAllTitles" prefWidth="166.0" text="Export All Titles with Qtys" GridPane.columnIndex="1" />
+                                       </children>
+                                       <HBox.margin>
+                                          <Insets />
+                                       </HBox.margin>
+                                    </GridPane>
                                         </children>
                                     </HBox>
-                                    <TableView layoutY="175.0" prefHeight="442.0" prefWidth="538.0">
+                                    <TableView fx:id="monthlyBreakdownTable" layoutY="175.0" prefHeight="442.0" prefWidth="538.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="450.0" AnchorPane.topAnchor="190.0">
                                         <columns>
-                                            <TableColumn prefWidth="171.3168179988861" text="Title" />
-                                            <TableColumn prefWidth="44.183197021484375" text="Qty" />
-                                            <TableColumn prefWidth="137.66236877441406" text="Pending Issue #" />
-                                            <TableColumn prefWidth="182.33755493164062" text="Flagged in Last 6 Months" />
+                                            <TableColumn fx:id="breakdownTitleColumn" prefWidth="171.3168179988861" text="Title" />
+                                            <TableColumn fx:id="breakdownQuantityColumn" prefWidth="44.183197021484375" text="Qty" />
+                                            <TableColumn fx:id="breakdownPendingIssueColumn" prefWidth="137.66236877441406" text="Pending Issue #" />
+                                            <TableColumn fx:id="breakdownFlaggedColumn" prefWidth="182.33755493164062" text="Flagged in Last 6 Months" />
                                         </columns>
                                     </TableView>
                                 </children>
                             </AnchorPane>
-                        </content>
-                    </Tab>
-                    <Tab text="Reports History">
-                        <content>
-                            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
                         </content>
                     </Tab>
                 </tabs>
