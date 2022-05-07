@@ -2,8 +2,16 @@ import javafx.scene.control.TextFormatter;
 
 import java.util.function.UnaryOperator;
 
+/**
+ * A utility class to format a text string into a phone number in real time
+ */
 public class PhoneNumberFilter implements UnaryOperator<TextFormatter.Change> {
 
+    /**
+     * Applies a specific text format to the text described by a TextFormatter change
+     * @param change the change to apply the format to
+     * @return the change with the formatted text
+     */
     @Override
     public TextFormatter.Change apply(TextFormatter.Change change) {
         if (change.isContentChange()) {
@@ -23,6 +31,10 @@ public class PhoneNumberFilter implements UnaryOperator<TextFormatter.Change> {
         return change;
     }
 
+    /**
+     * Makes sure that when a user deletes a character, the special characters related are deleted as well
+     * @param change any TextFormatter.Change
+     */
     private void handleBackspaceOverSpecialCharacter(TextFormatter.Change change) {
         if (change.isDeleted() && (change.getSelection().getLength() == 0)) {
             if (!Character.isDigit(change.getControlText().charAt(change.getRangeStart()))) {
@@ -33,6 +45,11 @@ public class PhoneNumberFilter implements UnaryOperator<TextFormatter.Change> {
         }
     }
 
+    /**
+     * Formats a string into XXX-XXX-XXXX format
+     * @param numbers the string to format
+     * @return the formatted string
+     */
     private String formatNumber(String numbers) {
         numbers = numbers.replaceAll("[^\\d]", "");
         numbers = numbers.substring(0, Math.min(10, numbers.length()));

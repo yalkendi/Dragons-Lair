@@ -138,6 +138,11 @@ public class EditOrderController {
         FxUtilTest.autoCompleteComboBoxPlus(setTitle, (typedText, itemToCompare) -> itemToCompare.toLowerCase().contains(typedText.toLowerCase()) || itemToCompare.equals(typedText));
     }
 
+
+    /**
+     * Takes an observable list of titles and creates an observable list of strings with just the title name
+     * @param getTitles The observable list of titles
+     */
     public void populate(ObservableList<Title> getTitles){
         this.titles = getTitles;
         for(int i=0; i < titles.size(); i++){
@@ -145,6 +150,11 @@ public class EditOrderController {
         }
     }
 
+    /**
+     * Gets the user's choice from the ComboBox
+     * @param setTitle The ComboBox to get the title from
+     * @return The ID of the title chosen, or -1 if input value is not found
+     */
     public int getChoice(ComboBox<String> setTitle ){
         String name = FxUtilTest.getComboBoxValue(setTitle);
 

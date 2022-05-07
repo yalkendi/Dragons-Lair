@@ -25,6 +25,11 @@ public class NewCustomerController implements Initializable {
     @FXML private TextField newCustomerLastName;
     @FXML private TextField newCustomerPhone;
 
+    /**
+     * Initialize the window by setting a TextFormatter for the phone number
+     * @param url
+     * @param resourceBundle
+     */
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         TextFormatter<String> textFormatter = new TextFormatter<String>(new DefaultStringConverter(), "", new PhoneNumberFilter());

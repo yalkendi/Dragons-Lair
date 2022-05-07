@@ -40,6 +40,8 @@ public class Title {
      * @param price The price of the Title
      * @param notes Notes for the Title
      * @param flagged Whether the title is flagged as a new release
+     * @param dateFlagged The date that this title was last flagged
+     * @param issueFlagged The specific issue number that this title is flagged for
      */
     public Title(int id, String title, int price, String notes, boolean flagged, LocalDate dateFlagged, int issueFlagged) {
         this.id = id;
@@ -159,15 +161,23 @@ public class Title {
 
     /**
      * Gets the date of the last time this title was flagged as a new release
-     * as a java.util.Date object
+     * as a LocalDate object
      * @return The date of the last this title was flagged
      */
     public LocalDate getDateFlagged() {
         return dateFlagged;
     }
 
+    /**
+     * Gets specific issue number that this title is flagged for
+     * @return the title's flagged issue number
+     */
     public int getIssueFlagged() { return issueFlagged; }
 
+    /**
+     * Sets the specific issue number that this title is flagged for
+     * @param issueFlagged the issue to flag for this title
+     */
     public void setIssueFlagged(int issueFlagged) { this.issueFlagged = issueFlagged; }
 
 }

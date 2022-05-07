@@ -176,11 +176,12 @@ public class Controller implements Initializable {
         });
         breakdownFlaggedColumn.setCellValueFactory(cell -> {
             LocalDate sixMonthsAgo = LocalDate.now().minusMonths(6);
-            if (cell.getValue().getDateFlagged().isBefore(sixMonthsAgo)) {
+            if (cell.getValue().getDateFlagged() == null) {
                 return new SimpleStringProperty("N");
-            } else {
-                return new SimpleStringProperty("Y");
+            } else if (cell.getValue().getDateFlagged().isBefore(sixMonthsAgo)) {
+                return new SimpleStringProperty("N");
             }
+            return new SimpleStringProperty("Y");
         });
         monthlyBreakdownTable.getItems().setAll(getTitles());
 
@@ -249,6 +250,9 @@ public class Controller implements Initializable {
         getDatabaseInfo();
     }
 
+    /**
+     * Helper method to get a variety of information from the database
+     */
     private void getDatabaseInfo() {
         int numTitles = titleTable.getItems().size();
         int numCustomers = customerTable.getItems().size();
@@ -286,6 +290,10 @@ public class Controller implements Initializable {
                 """, numTitles, numCustomers, specialOrderNotes, issueNumberRequests, titlesNotFlagged, titlesNoRequests));
     }
 
+    /**
+     * Gets the total number of issue requests in the database
+     * @return the total number of issue requests in the database
+     */
     private int getNumIssueRequests() {
         int numTitlesWithIssueNumbers = 0;
 
@@ -481,6 +489,10 @@ public class Controller implements Initializable {
         return titles;
     }
 
+    /**
+     * Gets all of the flagged titles and related information to fill the Flagged Table
+     * @return an obeservable lsit of FlaggedTable object with the requested data
+     */
     public ObservableList<FlaggedTable> getFlaggedTitles() {
 
         ObservableList<FlaggedTable> flaggedTitles = FXCollections.observableArrayList();
@@ -524,8 +536,11 @@ public class Controller implements Initializable {
         return flaggedTitles;
     }
 
-    /*
-    TODO
+    /**
+     * Gets requests for a title and issue. Specify any number less than 1 to specify all issues
+     * @param titleId The title to get the of requests for
+     * @param issue The issue to get the of requests for.
+     * @return an ObservableList of RequestTable objects of the requested requests
      */
     public ObservableList<RequestTable> getRequests(int titleId, int issue) {
 
@@ -1072,29 +1087,11 @@ public class Controller implements Initializable {
         }
     }
 
-    private Sheet createAndInitializeWorkbook(Workbook workbook) {
-        LocalDate today = LocalDate.now();
-        Sheet sheet = workbook.createSheet();
-        sheet.setColumnWidth(0, 8000);
-
-        Row header = sheet.createRow(0);
-
-        org.apache.poi.ss.usermodel.Cell headerCell = header.createCell(0);
-        headerCell.setCellValue("Date: " + today);
-        header = sheet.createRow(1);
-        sheet.addMergedRegion(new CellRangeAddress(1,1,0,2));
-        sheet.setRepeatingRows(new CellRangeAddress(4,4,0,2));
-        headerCell = header.createCell(0);
-        CellStyle cellStyle = workbook.createCellStyle();
-        cellStyle.setAlignment(HorizontalAlignment.CENTER);
-        headerCell.setCellStyle(cellStyle);
-        headerCell.setCellValue("All Titles with Requests and Quantities");
-
-        sheet.getHeader().setRight("Page &P of &N");
-
-        return sheet;
-    }
-
+    /**
+     * Helper method to save a report
+     * @param file The file to save
+     * @param workbook the workbook to save
+     */
     private void saveReport(File file, Workbook workbook) {
         Alert savingAlert = new Alert(Alert.AlertType.INFORMATION, "Saving Report", ButtonType.OK);
         try {
@@ -1123,6 +1120,11 @@ public class Controller implements Initializable {
         }
     }
 
+    /**
+     * Helper method to make the extension of a file .xlsx
+     * @param file file to add the extension to
+     * @return a child of the file with the new extension
+     */
     private File addFileExtension(File file) {
         if (file != null) {
             int index = file.getName().lastIndexOf('.');
@@ -1135,6 +1137,10 @@ public class Controller implements Initializable {
         return file;
     }
 
+    /**
+     * Exports all titles into a list with quantities and number of requests in an Excel spreadsheet
+     * @param event the event that triggered this method call
+     */
     @FXML
     void handleExportAllTitles(ActionEvent event) {
         LocalDate today = LocalDate.now();
@@ -1262,6 +1268,10 @@ public class Controller implements Initializable {
         }
     }
 
+    /**
+     * Exports a list of all titles with no customer requests to an Excel spreadsheet
+     * @param event the event that triggered this method call
+     */
     @FXML
     void handleExportNoRequestTitles(ActionEvent  event) {
         LocalDate today = LocalDate.now();
@@ -1326,6 +1336,10 @@ public class Controller implements Initializable {
         }
     }
 
+    /**
+     * Exports a list of all titles that have not been flagged in at least 6 months to an Excel spreadsheet
+     * @param event the event that triggered this method call
+     */
     @FXML
     void handleExportStalledTitles(ActionEvent event) {
         LocalDate today = LocalDate.now();
@@ -1380,7 +1394,7 @@ public class Controller implements Initializable {
             LocalDate sixMonthsAgo = LocalDate.now().minusMonths(6);
             int i = 4;
             for (Title title : titles) {
-                if (title.getDateFlagged().isBefore(sixMonthsAgo)) {
+                if (title.getDateFlagged() == null || title.getDateFlagged().isBefore(sixMonthsAgo)) {
                     row = sheet.createRow(i);
 
                     cell = row.createCell(0);
@@ -1388,7 +1402,11 @@ public class Controller implements Initializable {
                     cell.setCellStyle(wrapStyle);
 
                     cell = row.createCell(1);
-                    cell.setCellValue(title.getDateFlagged().toString());
+                    if (title.getDateFlagged() != null) {
+                        cell.setCellValue(title.getDateFlagged().toString());
+                    } else {
+                        cell.setCellValue("Never");
+                    }
                     cell.setCellStyle(wrapStyle);
 
                     i++;
@@ -1398,6 +1416,10 @@ public class Controller implements Initializable {
         }
     }
 
+    /**
+     * Exports all titles with pending issue number requests to an Excel spreadsheet
+     * @param event the event that triggered this method call
+     */
     @FXML
     void handleExportPendingIssueNumbers(ActionEvent event) {
         LocalDate today = LocalDate.now();
@@ -1528,6 +1550,10 @@ public class Controller implements Initializable {
         }
     }
 
+    /**
+     * Exports a list of all customers to an Excel spreadsheet
+     * @param event The event that triggered this method call
+     */
     @FXML
     void handleExportCustomerList(ActionEvent event) {
         LocalDate today = LocalDate.now();
@@ -1590,6 +1616,7 @@ public class Controller implements Initializable {
             {
                 String sql = """
                             SELECT * FROM CUSTOMERS
+                            ORDER BY LASTNAME
                             """;
 
                 s = conn.createStatement();
@@ -1620,6 +1647,9 @@ public class Controller implements Initializable {
         }
     }
 
+    /**
+     * Creates a report to export all of the flagged titles, in the same format as the All Requests by Title report
+     */
     @FXML
     void handleExportFlaggedTitles(ActionEvent event) {
         ObservableList<FlaggedTable> titles = getFlaggedTitles();
@@ -1660,6 +1690,11 @@ public class Controller implements Initializable {
         }
     }
 
+    /**
+     * Creates a report that organizes all customer requests by title. Writes every title with customer request
+     * information underneath to an Excel spreadsheet.
+     * @param event
+     */
     @FXML
     void handleExportAllRequestsByTitle(ActionEvent event) {
         ObservableList<Title> titles = titleTable.getItems();
@@ -1699,6 +1734,10 @@ public class Controller implements Initializable {
         }
     }
 
+    /**
+     * Creates a Excel report for a single Customer. Gets all available requests for the customer and writes them
+     * to an Excel spreadsheet.
+     */
     @FXML
     void handleExportSingleCustomer(ActionEvent event) {
         Customer customer = customerTable.getSelectionModel().getSelectedItem();
@@ -1827,6 +1866,11 @@ public class Controller implements Initializable {
         }
     }
 
+    /**
+     * Handler for the Export Single Title button in the reports tab. Creates a report for a single title that is
+     * selected in the reports tab
+     * @param event the event that triggered this method call
+     */
     @FXML
     void handleExportSingleTitleFlaggedTable(ActionEvent event) {
         FlaggedTable flaggedTableTitle = flaggedTable.getSelectionModel().getSelectedItem();
@@ -1917,6 +1961,15 @@ public class Controller implements Initializable {
         }
     }
 
+    /**
+     * Helper method to get the customer requests for a single title and write them to an Excel spreadsheet. Will
+     * skip all titles with no requests unless the force parameter is set to true
+     * @param workbook the Excel workbook to write to
+     * @param title the title to get information on
+     * @param rowIndex the row of the spreadsheet to start on
+     * @param force whether to force writing all titles with no requests or not
+     * @return the index of the last row that was written to
+     */
     private int exportSingleTitle(Workbook workbook, Title title, int rowIndex, boolean force) {
         String sql = String.format("""
                 SELECT FIRSTNAME, LASTNAME, ISSUE, QUANTITY FROM ORDERS
@@ -2248,6 +2301,11 @@ public class Controller implements Initializable {
 
     }
 
+    /**
+     * Searches the database for whether or not the given title has any pending issue requests
+     * @param titleId the ID of the title to search for
+     * @return True is the title has any pending issue requests, false otherwise
+     */
     private boolean hasPendingIssueRequest(int titleId) {
         boolean pendingIssueRequest = false;
         ResultSet result;
