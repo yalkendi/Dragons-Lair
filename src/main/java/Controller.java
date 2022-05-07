@@ -281,13 +281,12 @@ public class Controller implements Initializable {
 
         databaseOverview.setText(String.format("""
                 Database currently has:
-                    Database currently has:
-                       %s Titles
-                       %s Customers
-                       %s Special Order Notes
-                       %s Pending Issue # Requests
-                       %s Titles have not been flagged for over six months
-                       %s Titles have 0 Customer Requests
+                   %s Titles
+                   %s Customers
+                   %s Special Order Notes
+                   %s Pending Issue # Requests
+                   %s Titles have not been flagged for over six months
+                   %s Titles have 0 Customer Requests
                 """, numTitles, numCustomers, specialOrderNotes, issueNumberRequests, titlesNotFlagged, titlesNoRequests));
     }
 
