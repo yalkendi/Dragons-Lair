@@ -1,6 +1,5 @@
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
-import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -14,8 +13,6 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-//import javafx.scene.control.Cell;
-import javafx.scene.control.Cell;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.text.Text;
@@ -23,7 +20,6 @@ import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
-import javax.swing.*;
 import java.io.*;
 import java.net.URL;
 import java.sql.*;
@@ -32,7 +28,6 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ResourceBundle;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class Controller implements Initializable {
 
@@ -43,6 +38,7 @@ public class Controller implements Initializable {
     @FXML private TableView<Title> titleTable;
     @FXML private TableView<FlaggedTable> flaggedTable;                                         //Jack
     @FXML private TableView<RequestTable> requestsTable;
+
     @FXML private TableColumn<Customer, String> customerLastNameColumn;
     @FXML private TableColumn<Customer, String> customerFirstNameColumn;
     @FXML private TableColumn<Customer, String> customerPhoneColumn;
@@ -66,6 +62,12 @@ public class Controller implements Initializable {
     @FXML private TableColumn<RequestTable, String> requestLastNameColumn;
     @FXML private TableColumn<RequestTable, String> requestFirstNameColumn;
     @FXML private TableColumn<RequestTable, Integer> requestQuantityColumn;
+
+    @FXML private TableView<Title> monthlyBreakdownTable;
+    @FXML private TableColumn<Title, String> breakdownTitleColumn;
+    @FXML private TableColumn<Title, String> breakdownQuantityColumn;
+    @FXML private TableColumn<Title, String> breakdownPendingIssueColumn;
+    @FXML private TableColumn<Title, String> breakdownFlaggedColumn;
 
     @FXML private Text customerFirstNameText;
     @FXML private Text customerLastNameText;
@@ -163,6 +165,26 @@ public class Controller implements Initializable {
         requestFirstNameColumn.setCellValueFactory(new PropertyValueFactory<>("RequestFirstName"));
         requestQuantityColumn.setCellValueFactory(new PropertyValueFactory<>("RequestQuantity"));
 
+        breakdownTitleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
+        breakdownQuantityColumn.setCellValueFactory(cell -> new SimpleStringProperty(Integer.toString(getTitleQuantity(cell.getValue().getId()))));
+        breakdownPendingIssueColumn.setCellValueFactory(cell -> {
+            if (hasPendingIssueRequest(cell.getValue().getId())) {
+                return new SimpleStringProperty("Y");
+            } else {
+                return new SimpleStringProperty("N");
+            }
+        });
+        breakdownFlaggedColumn.setCellValueFactory(cell -> {
+            LocalDate sixMonthsAgo = LocalDate.now().minusMonths(6);
+            if (cell.getValue().getDateFlagged() == null) {
+                return new SimpleStringProperty("N");
+            } else if (cell.getValue().getDateFlagged().isBefore(sixMonthsAgo)) {
+                return new SimpleStringProperty("N");
+            }
+            return new SimpleStringProperty("Y");
+        });
+        monthlyBreakdownTable.getItems().setAll(getTitles());
+
         //Load the data for the Reports tab
         this.loadReportsTab();
 
@@ -228,6 +250,9 @@ public class Controller implements Initializable {
         getDatabaseInfo();
     }
 
+    /**
+     * Helper method to get a variety of information from the database
+     */
     private void getDatabaseInfo() {
         int numTitles = titleTable.getItems().size();
         int numCustomers = customerTable.getItems().size();
@@ -265,6 +290,10 @@ public class Controller implements Initializable {
                 """, numTitles, numCustomers, specialOrderNotes, issueNumberRequests, titlesNotFlagged, titlesNoRequests));
     }
 
+    /**
+     * Gets the total number of issue requests in the database
+     * @return the total number of issue requests in the database
+     */
     private int getNumIssueRequests() {
         int numTitlesWithIssueNumbers = 0;
 
@@ -460,6 +489,10 @@ public class Controller implements Initializable {
         return titles;
     }
 
+    /**
+     * Gets all of the flagged titles and related information to fill the Flagged Table
+     * @return an obeservable lsit of FlaggedTable object with the requested data
+     */
     public ObservableList<FlaggedTable> getFlaggedTitles() {
 
         ObservableList<FlaggedTable> flaggedTitles = FXCollections.observableArrayList();
@@ -470,24 +503,24 @@ public class Controller implements Initializable {
             s = conn.createStatement();
 
             ResultSet results = s.executeQuery("""
-            SELECT TITLEID, TITLE, ISSUE, PRICE, SUM(QUANTITY) AS QUANTITY, COUNT(CUSTOMERID) AS NUM_REQUESTS FROM (
-                                                                                                                    SELECT TITLES.TITLEID, TITLES.TITLE, ORDERS.CUSTOMERID, ORDERS.ISSUE, TITLES.PRICE, ORDERS.QUANTITY
-                                                                                                                    from TITLES
-                                                                                                                             LEFT JOIN ORDERS ON ORDERS.TITLEID = TITLES.TITLEID
-                                                                                                                    WHERE TITLES.FLAGGED = true AND (ISSUE = ISSUE_FLAGGED OR ISSUE IS NULL)
-                                                                                                                ) AS FLAGGED_ORDERS
-            GROUP BY TITLEID, TITLE, ISSUE, PRICE
-            ORDER BY TITLE, ISSUE
+            SELECT TITLEID, TITLE, ISSUE_FLAGGED, PRICE, SUM(QUANTITY) AS QUANTITY, COUNT(CUSTOMERID) AS NUM_REQUESTS FROM (
+                                                                                                                       SELECT TITLES.TITLEID, TITLES.TITLE, TITLES.ISSUE_FLAGGED, ORDERS.CUSTOMERID, ORDERS.ISSUE, TITLES.PRICE, ORDERS.QUANTITY
+                                                                                                                       from TITLES
+                                                                                                                                LEFT JOIN ORDERS ON ORDERS.TITLEID = TITLES.TITLEID
+                                                                                                                       WHERE TITLES.FLAGGED = true AND (ISSUE = ISSUE_FLAGGED OR ISSUE IS NULL)
+                                                                                                                   ) AS FLAGGED_ORDERS
+            GROUP BY TITLEID, TITLE, PRICE, ISSUE_FLAGGED
+            ORDER BY TITLE
             """);
             
             while(results.next())
             {
-                int titleId = results.getInt(1);
-                String title = results.getString(2);
-                int issue = results.getInt(3);
-                int price= results.getInt(4);
-                int quantity = results.getInt(5);
-                int numRequests = results.getInt(6);
+                int titleId = results.getInt("TITLEID");
+                String title = results.getString("TITLE");
+                int issue = results.getInt("ISSUE_FLAGGED");
+                int price= results.getInt("PRICE");
+                int quantity = results.getInt("QUANTITY");
+                int numRequests = results.getInt("NUM_REQUESTS");
 
                 flaggedTitles.add(new FlaggedTable( titleId, title, issue, price, quantity, numRequests));
 
@@ -503,8 +536,11 @@ public class Controller implements Initializable {
         return flaggedTitles;
     }
 
-    /*
-    TODO
+    /**
+     * Gets requests for a title and issue. Specify any number less than 1 to specify all issues
+     * @param titleId The title to get the of requests for
+     * @param issue The issue to get the of requests for.
+     * @return an ObservableList of RequestTable objects of the requested requests
      */
     public ObservableList<RequestTable> getRequests(int titleId, int issue) {
 
@@ -518,7 +554,7 @@ public class Controller implements Initializable {
                 sql = String.format("""
                         SELECT CUSTOMERS.LASTNAME, CUSTOMERS.FIRSTNAME, ORDERS.QUANTITY FROM CUSTOMERS
                         INNER JOIN ORDERS ON ORDERS.CUSTOMERID=CUSTOMERS.CUSTOMERID
-                        WHERE ORDERS.TITLEID=%s AND ORDERS.ISSUE=%s
+                        WHERE ORDERS.TITLEID=%s AND (ORDERS.ISSUE=%s OR ORDERS.ISSUE IS NULL)
                         ORDER BY CUSTOMERS.LASTNAME
                         """, titleId, issue);
             } else {
@@ -1051,29 +1087,11 @@ public class Controller implements Initializable {
         }
     }
 
-    private Sheet createAndInitializeWorkbook(Workbook workbook) {
-        LocalDate today = LocalDate.now();
-        Sheet sheet = workbook.createSheet();
-        sheet.setColumnWidth(0, 8000);
-
-        Row header = sheet.createRow(0);
-
-        org.apache.poi.ss.usermodel.Cell headerCell = header.createCell(0);
-        headerCell.setCellValue("Date: " + today);
-        header = sheet.createRow(1);
-        sheet.addMergedRegion(new CellRangeAddress(1,1,0,2));
-        sheet.setRepeatingRows(new CellRangeAddress(4,4,0,2));
-        headerCell = header.createCell(0);
-        CellStyle cellStyle = workbook.createCellStyle();
-        cellStyle.setAlignment(HorizontalAlignment.CENTER);
-        headerCell.setCellStyle(cellStyle);
-        headerCell.setCellValue("All Titles with Requests and Quantities");
-
-        sheet.getHeader().setRight("Page &P of &N");
-
-        return sheet;
-    }
-
+    /**
+     * Helper method to save a report
+     * @param file The file to save
+     * @param workbook the workbook to save
+     */
     private void saveReport(File file, Workbook workbook) {
         Alert savingAlert = new Alert(Alert.AlertType.INFORMATION, "Saving Report", ButtonType.OK);
         try {
@@ -1102,17 +1120,436 @@ public class Controller implements Initializable {
         }
     }
 
+    /**
+     * Helper method to make the extension of a file .xlsx
+     * @param file file to add the extension to
+     * @return a child of the file with the new extension
+     */
     private File addFileExtension(File file) {
-        int index = file.getName().lastIndexOf('.');
-        if (index == -1) {
-            file = new File(file.getParent(), file.getName() + ".xlsx");
-        } else {
-            file = new File(file.getParent(), file.getName().substring(0,index) + ".xlsx");
+        if (file != null) {
+            int index = file.getName().lastIndexOf('.');
+            if (index == -1) {
+                file = new File(file.getParent(), file.getName() + ".xlsx");
+            } else {
+                file = new File(file.getParent(), file.getName().substring(0, index) + ".xlsx");
+            }
         }
-
         return file;
     }
 
+    /**
+     * Exports all titles into a list with quantities and number of requests in an Excel spreadsheet
+     * @param event the event that triggered this method call
+     */
+    @FXML
+    void handleExportAllTitles(ActionEvent event) {
+        LocalDate today = LocalDate.now();
+        String fileName = "All Titles " + today + ".xlsx";
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export Location");
+        fileChooser.setInitialFileName(fileName);
+        File file = fileChooser.showSaveDialog(((Node) event.getTarget()).getScene().getWindow());
+
+        if (file != null) {
+            file = addFileExtension(file);
+
+            Workbook workbook = new XSSFWorkbook();
+
+            Sheet sheet = workbook.createSheet(fileName);
+            sheet.setColumnWidth(0, 8000);
+            sheet.setColumnWidth(3, 4500);
+
+            Row header = sheet.createRow(0);
+
+            org.apache.poi.ss.usermodel.Cell headerCell = header.createCell(0);
+            headerCell.setCellValue("Date: " + today);
+            header = sheet.createRow(1);
+            sheet.addMergedRegion(new CellRangeAddress(1,1,0,3));
+            headerCell = header.createCell(0);
+            CellStyle cellStyle = workbook.createCellStyle();
+            cellStyle.setAlignment(HorizontalAlignment.CENTER);
+            headerCell.setCellStyle(cellStyle);
+            headerCell.setCellValue("All Titles");
+
+            sheet.setRepeatingRows(new CellRangeAddress(3,3,0,3));
+            sheet.getHeader().setRight("Page &P of &N");
+
+            Font bold = workbook.createFont();
+            bold.setBold(true);
+
+            CellStyle headStyle = workbook.createCellStyle();
+            headStyle.setFont(bold);
+            headStyle.setAlignment(HorizontalAlignment.RIGHT);
+
+            Row row = sheet.createRow(3);
+            org.apache.poi.ss.usermodel.Cell cell = row.createCell(0);
+            CellStyle titleHeadStyle = workbook.createCellStyle();
+            titleHeadStyle.setFont(bold);
+            cell.setCellStyle(titleHeadStyle);
+            cell.setCellValue("Title");
+
+            cell = row.createCell(1);
+            cell.setCellValue("Issue");
+            cell.setCellStyle(headStyle);
+
+            cell = row.createCell(2);
+            cell.setCellValue("Quantity");
+            cell.setCellStyle(headStyle);
+
+            cell = row.createCell(3);
+            cell.setCellValue("Number of Requests");
+            cell.setCellStyle(headStyle);
+
+            CellStyle wrapStyle = workbook.createCellStyle();
+            wrapStyle.setWrapText(true);
+
+            ResultSet result;
+            Statement s = null;
+            try
+            {
+                String sql = """
+                    SELECT TITLE, ISSUE, SUM(QUANTITY) AS QUANTITY, COUNT(CUSTOMERID) AS NUM_REQUESTS FROM (
+                       SELECT TITLES.TITLEID, TITLES.TITLE, ORDERS.CUSTOMERID, ORDERS.ISSUE, ORDERS.QUANTITY
+                       from TITLES
+                                LEFT JOIN ORDERS ON ORDERS.TITLEID = TITLES.TITLEID
+                    ) AS ORDERS
+                    GROUP BY TITLEID, TITLE, ISSUE
+                    ORDER BY TITLE, ISSUE
+                    """;
+
+                s = conn.createStatement();
+                result = s.executeQuery(sql);
+
+                CellStyle rightAlign = workbook.createCellStyle();
+                rightAlign.setAlignment(HorizontalAlignment.RIGHT);
+
+                int i = 4;
+                while (result.next()) {
+                    String title = result.getString("TITLE");
+                    Object issue = result.getObject("ISSUE");
+                    int quantity = result.getInt("QUANTITY");
+                    int numRequests = result.getInt("NUM_REQUESTS");
+
+                    row = sheet.createRow(i);
+
+                    cell = row.createCell(0);
+                    cell.setCellValue(title);
+                    cell.setCellStyle(wrapStyle);
+
+                    cell = row.createCell(1);
+                    if (issue != null) {
+                        cell.setCellValue(Integer.parseInt(issue.toString()));
+                    } else {
+                        cell.setCellValue("All");
+                    }
+                    cell.setCellStyle(rightAlign);
+
+                    cell = row.createCell(2);
+                    cell.setCellValue(quantity);
+                    cell.setCellStyle(rightAlign);
+
+                    cell = row.createCell(3);
+                    cell.setCellValue(numRequests);
+                    cell.setCellStyle(wrapStyle);
+
+                    i++;
+                }
+                result.close();
+                s.close();
+                saveReport(file, workbook);
+            }
+            catch (SQLException sqlExcept)
+            {
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Database Error. Report may not have saved successfully", ButtonType.OK);
+                alert.setTitle("Database Error");
+                alert.show();
+            }
+        }
+    }
+
+    /**
+     * Exports a list of all titles with no customer requests to an Excel spreadsheet
+     * @param event the event that triggered this method call
+     */
+    @FXML
+    void handleExportNoRequestTitles(ActionEvent  event) {
+        LocalDate today = LocalDate.now();
+        String fileName = "Zero Request Titles " + today + ".xlsx";
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export Location");
+        fileChooser.setInitialFileName(fileName);
+        File file = fileChooser.showSaveDialog(((Node) event.getTarget()).getScene().getWindow());
+        file = addFileExtension(file);
+
+        if (file != null) {
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet(fileName);
+            sheet.setColumnWidth(0, 10000);
+
+            Row header = sheet.createRow(0);
+
+            org.apache.poi.ss.usermodel.Cell headerCell = header.createCell(0);
+            headerCell.setCellValue("Date: " + today);
+            header = sheet.createRow(1);
+            headerCell = header.createCell(0);
+            CellStyle cellStyle = workbook.createCellStyle();
+            cellStyle.setAlignment(HorizontalAlignment.CENTER);
+            headerCell.setCellStyle(cellStyle);
+            headerCell.setCellValue("Titles with Zero Requests");
+
+            sheet.setRepeatingRows(new CellRangeAddress(3,3,0,0));
+            sheet.getHeader().setRight("Page &P of &N");
+
+            Font bold = workbook.createFont();
+            bold.setBold(true);
+
+            CellStyle headStyle = workbook.createCellStyle();
+            headStyle.setFont(bold);
+
+            Row row = sheet.createRow(3);
+            org.apache.poi.ss.usermodel.Cell cell = row.createCell(0);
+            cell.setCellStyle(headStyle);
+            cell.setCellValue("Title");
+
+            CellStyle wrapStyle = workbook.createCellStyle();
+            wrapStyle.setWrapText(true);
+
+            ObservableList<Title> titles = titleTable.getItems();
+            int i = 0;
+            for (Title title : titles) {
+                if (getNumberRequests(title.getId()) == 0) {
+                    row = sheet.createRow(i+4);
+
+                    cell = row.createCell(0);
+                    cell.setCellValue(title.getTitle());
+                    cell.setCellStyle(wrapStyle);
+
+                    i++;
+                }
+            }
+            row = sheet.createRow(i+4);
+            cell = row.createCell(0);
+            cell.setCellValue("Total: " + i);
+            saveReport(file, workbook);
+        }
+    }
+
+    /**
+     * Exports a list of all titles that have not been flagged in at least 6 months to an Excel spreadsheet
+     * @param event the event that triggered this method call
+     */
+    @FXML
+    void handleExportStalledTitles(ActionEvent event) {
+        LocalDate today = LocalDate.now();
+        String fileName = "Stalled Titles " + today + ".xlsx";
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export Location");
+        fileChooser.setInitialFileName(fileName);
+        File file = fileChooser.showSaveDialog(((Node) event.getTarget()).getScene().getWindow());
+        file = addFileExtension(file);
+
+        if (file != null) {
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet(fileName);
+            sheet.setColumnWidth(0, 8000);
+            sheet.setColumnWidth(1, 6000);
+
+            Row header = sheet.createRow(0);
+
+            org.apache.poi.ss.usermodel.Cell headerCell = header.createCell(0);
+            headerCell.setCellValue("Date: " + today);
+            header = sheet.createRow(1);
+            sheet.addMergedRegion(new CellRangeAddress(1,1,0,1));
+            headerCell = header.createCell(0);
+            CellStyle cellStyle = workbook.createCellStyle();
+            cellStyle.setAlignment(HorizontalAlignment.CENTER);
+            headerCell.setCellStyle(cellStyle);
+            headerCell.setCellValue("All Stalled Titles");
+
+            sheet.setRepeatingRows(new CellRangeAddress(3,3,0,1));
+            sheet.getHeader().setRight("Page &P of &N");
+
+            Font bold = workbook.createFont();
+            bold.setBold(true);
+
+            CellStyle headStyle = workbook.createCellStyle();
+            headStyle.setFont(bold);
+
+            Row row = sheet.createRow(3);
+            org.apache.poi.ss.usermodel.Cell cell = row.createCell(0);
+            cell.setCellStyle(headStyle);
+            cell.setCellValue("Title");
+
+            cell = row.createCell(1);
+            cell.setCellValue("Date Last Flagged");
+            cell.setCellStyle(headStyle);
+
+            CellStyle wrapStyle = workbook.createCellStyle();
+            wrapStyle.setWrapText(true);
+
+            ObservableList<Title> titles = titleTable.getItems();
+            LocalDate sixMonthsAgo = LocalDate.now().minusMonths(6);
+            int i = 4;
+            for (Title title : titles) {
+                if (title.getDateFlagged().isBefore(sixMonthsAgo)) {
+                    row = sheet.createRow(i);
+
+                    cell = row.createCell(0);
+                    cell.setCellValue(title.getTitle());
+                    cell.setCellStyle(wrapStyle);
+
+                    cell = row.createCell(1);
+                    cell.setCellValue(title.getDateFlagged().toString());
+                    cell.setCellStyle(wrapStyle);
+
+                    i++;
+                }
+            }
+            saveReport(file, workbook);
+        }
+    }
+
+    /**
+     * Exports all titles with pending issue number requests to an Excel spreadsheet
+     * @param event the event that triggered this method call
+     */
+    @FXML
+    void handleExportPendingIssueNumbers(ActionEvent event) {
+        LocalDate today = LocalDate.now();
+        String fileName = "Pending Issue Requests " + today + ".xlsx";
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export Location");
+        fileChooser.setInitialFileName(fileName);
+        File file = fileChooser.showSaveDialog(((Node) event.getTarget()).getScene().getWindow());
+
+        if (file != null) {
+            file = addFileExtension(file);
+
+            Workbook workbook = new XSSFWorkbook();
+
+            Sheet sheet = workbook.createSheet(fileName);
+            sheet.setColumnWidth(0, 8000);
+            sheet.setColumnWidth(3, 6000);
+
+            Row header = sheet.createRow(0);
+
+            org.apache.poi.ss.usermodel.Cell headerCell = header.createCell(0);
+            headerCell.setCellValue("Date: " + today);
+            header = sheet.createRow(1);
+            sheet.addMergedRegion(new CellRangeAddress(1,1,0,2));
+            headerCell = header.createCell(0);
+            CellStyle cellStyle = workbook.createCellStyle();
+            cellStyle.setAlignment(HorizontalAlignment.CENTER);
+            headerCell.setCellStyle(cellStyle);
+            headerCell.setCellValue("Pending Issue Number Requests");
+
+            sheet.setRepeatingRows(new CellRangeAddress(3,3,0,3));
+            sheet.getHeader().setRight("Page &P of &N");
+
+            Font bold = workbook.createFont();
+            bold.setBold(true);
+
+            CellStyle headStyle = workbook.createCellStyle();
+            headStyle.setFont(bold);
+            headStyle.setAlignment(HorizontalAlignment.RIGHT);
+
+            Row row = sheet.createRow(3);
+            org.apache.poi.ss.usermodel.Cell cell = row.createCell(0);
+            CellStyle titleHeadStyle = workbook.createCellStyle();
+            titleHeadStyle.setFont(bold);
+            cell.setCellStyle(titleHeadStyle);
+            cell.setCellValue("Title");
+
+            cell = row.createCell(1);
+            cell.setCellValue("Issue");
+            cell.setCellStyle(headStyle);
+
+            cell = row.createCell(2);
+            cell.setCellValue("Quantity");
+            cell.setCellStyle(headStyle);
+
+            cell = row.createCell(3);
+            cell.setCellStyle(titleHeadStyle);
+            cell.setCellValue("Customer");
+
+            CellStyle wrapStyle = workbook.createCellStyle();
+            wrapStyle.setWrapText(true);
+
+            ResultSet result;
+            Statement s = null;
+            try
+            {
+                String sql = """
+                            SELECT T.TITLE, ISSUE_REQUESTS.CUSTOMERID, ISSUE_REQUESTS.TITLEID, ISSUE_REQUESTS.QUANTITY, ISSUE_REQUESTS.ISSUE, ISSUE_REQUESTS.FIRSTNAME, ISSUE_REQUESTS.LASTNAME
+                            FROM (
+                                              SELECT O.CUSTOMERID, O.TITLEID, O.QUANTITY, O.ISSUE, C.FIRSTNAME, C.LASTNAME
+                                              FROM ORDERS O
+                                                       INNER JOIN CUSTOMERS C on O.CUSTOMERID = C.CUSTOMERID
+                                              WHERE ISSUE IS NOT NULL
+                                          ) AS ISSUE_REQUESTS
+                            INNER JOIN TITLES T on ISSUE_REQUESTS.TITLEID = T.TITLEID
+                            ORDER BY T.TITLE
+                            """;
+
+                s = conn.createStatement();
+                result = s.executeQuery(sql);
+                CellStyle reqItemStyle = workbook.createCellStyle();
+                reqItemStyle.setWrapText(true);
+                CellStyle rightAlign = workbook.createCellStyle();
+                rightAlign.setAlignment(HorizontalAlignment.RIGHT);
+
+                int i = 4;
+                while (result.next()) {
+                    String title = result.getString("TITLE");
+                    String name = result.getString("LASTNAME") + " " + result.getString("FIRSTNAME");
+                    Object issue = result.getObject("ISSUE");
+                    int quantity = result.getInt("QUANTITY");
+
+                    row = sheet.createRow(i);
+
+                    cell = row.createCell(0);
+                    cell.setCellValue(title);
+                    cell.setCellStyle(wrapStyle);
+
+                    cell = row.createCell(1);
+                    if (issue != null) {
+                        cell.setCellValue(Integer.parseInt(issue.toString()));
+                    } else {
+                        cell.setCellValue("All");
+                    }
+                    cell.setCellStyle(rightAlign);
+
+                    cell = row.createCell(2);
+                    cell.setCellValue(quantity);
+                    cell.setCellStyle(rightAlign);
+
+                    cell = row.createCell(3);
+                    cell.setCellValue(name);
+                    cell.setCellStyle(wrapStyle);
+
+                    i++;
+                }
+                result.close();
+                s.close();
+                saveReport(file, workbook);
+            }
+            catch (SQLException sqlExcept)
+            {
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Database Error. Report may not have saved successfully", ButtonType.OK);
+                alert.setTitle("Database Error");
+                alert.show();
+            }
+        }
+    }
+
+    /**
+     * Exports a list of all customers to an Excel spreadsheet
+     * @param event The event that triggered this method call
+     */
     @FXML
     void handleExportCustomerList(ActionEvent event) {
         LocalDate today = LocalDate.now();
@@ -1145,13 +1582,16 @@ public class Controller implements Initializable {
             headerCell.setCellStyle(cellStyle);
             headerCell.setCellValue("All Customers by Last Name");
 
+            sheet.setRepeatingRows(new CellRangeAddress(3,3,0,2));
+            sheet.getHeader().setRight("Page &P of &N");
+
             Font bold = workbook.createFont();
             bold.setBold(true);
 
             CellStyle headStyle = workbook.createCellStyle();
             headStyle.setFont(bold);
 
-            Row row = sheet.createRow(4);
+            Row row = sheet.createRow(3);
             org.apache.poi.ss.usermodel.Cell cell = row.createCell(0);
             CellStyle titleHeadStyle = workbook.createCellStyle();
             titleHeadStyle.setFont(bold);
@@ -1176,7 +1616,7 @@ public class Controller implements Initializable {
 
                 s = conn.createStatement();
                 result = s.executeQuery(sql);
-                int i = 5;
+                int i = 4;
                 while(result.next()) {
                     row = sheet.createRow(i);
                     cell = row.createCell(0);
@@ -1202,8 +1642,13 @@ public class Controller implements Initializable {
         }
     }
 
+    /**
+     * Creates a report to export all of the flagged titles, in the same format as the All Requests by Title report
+     */
     @FXML
     void handleExportFlaggedTitles(ActionEvent event) {
+        ObservableList<FlaggedTable> titles = getFlaggedTitles();
+
         LocalDate today = LocalDate.now();
         String fileName = "All Flagged Titles " + today + ".xlsx";
 
@@ -1225,121 +1670,32 @@ public class Controller implements Initializable {
             org.apache.poi.ss.usermodel.Cell headerCell = header.createCell(0);
             headerCell.setCellValue("Date: " + today);
             header = sheet.createRow(1);
-            sheet.addMergedRegion(new CellRangeAddress(1,1,0,4));
+            sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, 2));
             headerCell = header.createCell(0);
             CellStyle cellStyle = workbook.createCellStyle();
             cellStyle.setAlignment(HorizontalAlignment.CENTER);
             headerCell.setCellStyle(cellStyle);
-            headerCell.setCellValue("All Flagged Titles with Requests and Quantities");
-
-            Row row = sheet.createRow(2);
-            org.apache.poi.ss.usermodel.Cell cell = row.createCell(0);
-
-            Font bold = workbook.createFont();
-            bold.setBold(true);
-
-            CellStyle headStyle = workbook.createCellStyle();
-            headStyle.setFont(bold);
-            headStyle.setAlignment(HorizontalAlignment.RIGHT);
-
-            row = sheet.createRow(4);
-            cell = row.createCell(0);
-            CellStyle titleHeadStyle = workbook.createCellStyle();
-            titleHeadStyle.setFont(bold);
-            cell.setCellStyle(titleHeadStyle);
-            cell.setCellValue("Title");
-
-            cell = row.createCell(1);
-            cell.setCellStyle(headStyle);
-            cell.setCellValue("Issue");
-
-
-            cell = row.createCell(2);
-            cell.setCellStyle(headStyle);
-            cell.setCellValue("Price");
-
-            cell = row.createCell(3);
-            cell.setCellStyle(headStyle);
-            cell.setCellValue("Quantity");
-
-            cell = row.createCell(4);
-            cell.setCellStyle(headStyle);
-            cell.setCellValue("# of Requests");
-
-            CellStyle titleStyle = workbook.createCellStyle();
-            titleStyle.setWrapText(true);
-            CellStyle rightAlign = workbook.createCellStyle();
-            rightAlign.setAlignment(HorizontalAlignment.RIGHT);
-
-            ResultSet result;
-            Statement s = null;
-            try
-            {
-                String sql = """
-                            SELECT TITLEID, TITLE, ISSUE, PRICE, SUM(QUANTITY) AS QUANTITY, COUNT(CUSTOMERID) AS NUM_REQUESTS FROM (
-                                                                                                                    SELECT TITLES.TITLEID, TITLES.TITLE, ORDERS.CUSTOMERID, ORDERS.ISSUE, TITLES.PRICE, ORDERS.QUANTITY
-                                                                                                                    from TITLES
-                                                                                                                             LEFT JOIN ORDERS ON ORDERS.TITLEID = TITLES.TITLEID
-                                                                                                                    WHERE TITLES.FLAGGED = true AND (ISSUE = ISSUE_FLAGGED OR ISSUE IS NULL)
-                                                                                                                ) AS FLAGGED_ORDERS
-                            GROUP BY TITLEID, TITLE, ISSUE, PRICE
-                            ORDER BY TITLE, ISSUE
-                            """;
-
-                s = conn.createStatement();
-                result = s.executeQuery(sql);
-                int i = 5;
-                while(result.next()) {
-                    row = sheet.createRow(i);
-                    cell = row.createCell(0);
-                    cell.setCellStyle(titleStyle);
-                    cell.setCellValue(result.getString("TITLE"));
-
-                    cell = row.createCell(1);
-                    cell.setCellStyle(rightAlign);
-                    Object issue = result.getObject("ISSUE");
-                    if (issue != null) {
-                        cell.setCellValue(Integer.parseInt(issue.toString()));
-                    } else {
-                        cell.setCellValue("All");
-                    }
-
-                    cell = row.createCell(2);
-                    cell.setCellStyle(rightAlign);
-                    int price = result.getInt("PRICE");
-                    if (price != 0) {
-                        cell.setCellValue(centsToDollars(price));
-                    }
-
-                    cell = row.createCell(3);
-                    cell.setCellStyle(rightAlign);
-                    int quantity = result.getInt("QUANTITY");
-                    cell.setCellValue(quantity);
-
-                    cell = row.createCell(4);
-                    cell.setCellStyle(rightAlign);
-                    cell.setCellValue(result.getInt("NUM_REQUESTS"));
-                    i++;
-                }
-                result.close();
-                s.close();
-
-                saveReport(file, workbook);
+            headerCell.setCellValue("All Flagged Titles with Requests");
+            int rowIndex = 2;
+            for (FlaggedTable title : titles) {
+                Title tempTitle = new Title(title.getTitleId(), title.getFlaggedTitleName(), 0, "");
+                rowIndex = exportSingleTitle(workbook, tempTitle, rowIndex, false);
             }
-            catch (SQLException sqlExcept)
-            {
-                Alert alert = new Alert(Alert.AlertType.ERROR, "Database Error. Report may not have saved successfully", ButtonType.OK);
-                alert.setTitle("Database Error");
-                alert.show();
-            }
+            saveReport(file, workbook);
         }
     }
 
+    /**
+     * Creates a report that organizes all customer requests by title. Writes every title with customer request
+     * information underneath to an Excel spreadsheet.
+     * @param event
+     */
     @FXML
-    void handleExportAllTitles(ActionEvent event) {
+    void handleExportAllRequestsByTitle(ActionEvent event) {
         ObservableList<Title> titles = titleTable.getItems();
+
         LocalDate today = LocalDate.now();
-        String fileName = "All Requests by Title " + today + ".xlsx";
+        String fileName = "All Customer Requests by Title " + today + ".xlsx";
 
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export Location");
@@ -1351,103 +1707,32 @@ public class Controller implements Initializable {
 
             Workbook workbook = new XSSFWorkbook();
 
-            Sheet sheet = createAndInitializeWorkbook(workbook);
+            Sheet sheet = workbook.createSheet(fileName);
+            sheet.setColumnWidth(0, 6000);
 
-            Font bold = workbook.createFont();
-            bold.setBold(true);
+            Row header = sheet.createRow(0);
 
-            CellStyle headStyle = workbook.createCellStyle();
-            headStyle.setFont(bold);
-            headStyle.setAlignment(HorizontalAlignment.RIGHT);
-
-            Row row = sheet.createRow(4);
-            org.apache.poi.ss.usermodel.Cell cell = row.createCell(0);
-            cell.setCellValue("Title");
-            CellStyle titleHeadStyle = workbook.createCellStyle();
-            titleHeadStyle.setFont(bold);
-            cell.setCellStyle(titleHeadStyle);
-
-            cell = row.createCell(1);
-            cell.setCellValue("Issue");
-            cell.setCellStyle(headStyle);
-
-            cell = row.createCell(2);
-            cell.setCellValue("Quantity");
-            cell.setCellStyle(headStyle);
-
-            CellStyle titleStyle = workbook.createCellStyle();
-            titleStyle.setWrapText(true);
-            CellStyle rightAlign = workbook.createCellStyle();
-            rightAlign.setAlignment(HorizontalAlignment.RIGHT);
-
-            ResultSet result;
-            Statement s = null;
-            try
-            {
-                String sql = """
-                                SELECT TITLEID, TITLE, ISSUE, SUM(QUANTITY) AS QUANTITY FROM (
-                                    SELECT TITLES.TITLEID, TITLES.TITLE, ORDERS.CUSTOMERID, ORDERS.ISSUE, TITLES.PRICE, ORDERS.QUANTITY
-                                    from TITLES
-                                    LEFT JOIN ORDERS ON ORDERS.TITLEID = TITLES.TITLEID
-                                ) AS ORDERS
-                                GROUP BY TITLEID, TITLE, ISSUE, PRICE
-                                ORDER BY TITLE, ISSUE
-                            """;
-
-                s = conn.createStatement();
-                result = s.executeQuery(sql);
-
-                int i = 5;
-                int totalQuantity = 0;
-                int totalTitles = 0;
-                while(result.next()) {
-                    row = sheet.createRow(i);
-                    cell = row.createCell(0);
-                    cell.setCellStyle(titleStyle);
-                    cell.setCellValue(result.getString("TITLE"));
-                    cell = row.createCell(1);
-                    Object issue = result.getObject("ISSUE");
-                    cell.setCellStyle(rightAlign);
-                    if (issue != null) {
-                        cell.setCellValue(Integer.parseInt(issue.toString()));
-                    } else {
-                        cell.setCellValue("All");
-                    }
-                    cell = row.createCell(2);
-                    int quantity = result.getInt("QUANTITY");
-                    cell.setCellStyle(rightAlign);
-                    cell.setCellValue(quantity);
-                    totalQuantity += quantity;
-                    totalTitles++;
-                    i++;
-                }
-
-                result.close();
-                s.close();
-
-//                row = sheet.createRow(3);
-//                cell = row.createCell(0);
-//                cell.setCellValue("Total Titles:");
-//                cell = row.createCell(1);
-//                cell.setCellValue(totalTitles);
-//
-//                row = sheet.createRow(4);
-//                cell = row.createCell(0);
-//                cell.setCellValue("Total Customers:");
-//                cell = row.createCell(1);
-//                cell.setCellValue(totalCustomers);
-
-                saveReport(file, workbook);
+            org.apache.poi.ss.usermodel.Cell headerCell = header.createCell(0);
+            headerCell.setCellValue("Date: " + today);
+            header = sheet.createRow(1);
+            sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, 2));
+            headerCell = header.createCell(0);
+            CellStyle cellStyle = workbook.createCellStyle();
+            cellStyle.setAlignment(HorizontalAlignment.CENTER);
+            headerCell.setCellStyle(cellStyle);
+            headerCell.setCellValue("All Customer Requests by Title");
+            int rowIndex = 2;
+            for (Title title : titles) {
+                rowIndex = exportSingleTitle(workbook, title, rowIndex, false);
             }
-            catch (SQLException sqlExcept)
-            {
-                Alert alert = new Alert(Alert.AlertType.ERROR, "Database Error. Report may not have saved successfully", ButtonType.OK);
-                alert.setTitle("Database Error");
-                alert.show();
-            }
+            saveReport(file, workbook);
         }
     }
 
+    /**
+     * Creates a Excel report for a single Customer. Gets all available requests for the customer and writes them
+     * to an Excel spreadsheet.
+     */
     @FXML
     void handleExportSingleCustomer(ActionEvent event) {
         Customer customer = customerTable.getSelectionModel().getSelectedItem();
@@ -1486,6 +1771,9 @@ public class Controller implements Initializable {
             headerCell.setCellStyle(cellStyle);
             headerCell.setCellValue("Single Customer Request List");
 
+            sheet.setRepeatingRows(new CellRangeAddress(3,3,0,2));
+            sheet.getHeader().setRight("Page &P of &N");
+
             Row row = sheet.createRow(2);
             org.apache.poi.ss.usermodel.Cell cell = row.createCell(0);
             cell.setCellValue("Customer: " + customer.getFullName());
@@ -1496,7 +1784,7 @@ public class Controller implements Initializable {
             headStyle.setFont(bold);
             headStyle.setAlignment(HorizontalAlignment.RIGHT);
 
-            row = sheet.createRow(4);
+            row = sheet.createRow(3);
 
             cell = row.createCell(0);
             CellStyle reqItemHeadStyle = workbook.createCellStyle();
@@ -1517,7 +1805,6 @@ public class Controller implements Initializable {
             CellStyle rightAlign = workbook.createCellStyle();
             rightAlign.setAlignment(HorizontalAlignment.RIGHT);
 
-            ResultSet result;
             Statement s = null;
             try
             {
@@ -1531,7 +1818,7 @@ public class Controller implements Initializable {
                 s = conn.createStatement();
                 ResultSet results = s.executeQuery(sql);
 
-                int i = 5;
+                int i = 4;
                 int totalQuantity = 0;
                 while(results.next())
                 {
@@ -1557,7 +1844,7 @@ public class Controller implements Initializable {
                 results.close();
                 s.close();
 
-                row = sheet.createRow(i+1);
+                row = sheet.createRow(i);
                 cell = row.createCell(0);
                 cell.setCellValue("Total:");
                 cell = row.createCell(2);
@@ -1574,11 +1861,52 @@ public class Controller implements Initializable {
         }
     }
 
+    /**
+     * Handler for the Export Single Title button in the reports tab. Creates a report for a single title that is
+     * selected in the reports tab
+     * @param event the event that triggered this method call
+     */
     @FXML
     void handleExportSingleTitleFlaggedTable(ActionEvent event) {
         FlaggedTable flaggedTableTitle = flaggedTable.getSelectionModel().getSelectedItem();
-        Title title = new Title(flaggedTableTitle.getTitleId(), flaggedTableTitle.getFlaggedTitleName(), flaggedTableTitle.getFlaggedPriceCents(), "");
-        exportSingleTitle(event, title);
+        if (flaggedTableTitle == null) {
+            Alert selectedAlert = new Alert(Alert.AlertType.INFORMATION, "Please select a title.", ButtonType.OK);
+            selectedAlert.setTitle("Confirm Export");
+            selectedAlert.setHeaderText("");
+            selectedAlert.show();
+        } else {
+            Title title = new Title(flaggedTableTitle.getTitleId(), flaggedTableTitle.getFlaggedTitleName(), flaggedTableTitle.getFlaggedPriceCents(), "");
+
+            LocalDate today = LocalDate.now();
+            String fileName = title.getTitle() + " Requests " + today + ".xlsx";
+
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Export Location");
+            fileChooser.setInitialFileName(fileName);
+            File file = fileChooser.showSaveDialog(((Node) event.getTarget()).getScene().getWindow());
+
+            if (file != null) {
+                file = addFileExtension(file);
+
+                Workbook workbook = new XSSFWorkbook();
+
+                Sheet sheet = workbook.createSheet(fileName);
+                sheet.setColumnWidth(0, 6000);
+
+                Row header = sheet.createRow(0);
+                org.apache.poi.ss.usermodel.Cell headerCell = header.createCell(0);
+                headerCell.setCellValue("Date: " + today);
+                header = sheet.createRow(1);
+                sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, 2));
+                headerCell = header.createCell(0);
+                CellStyle cellStyle = workbook.createCellStyle();
+                cellStyle.setAlignment(HorizontalAlignment.CENTER);
+                headerCell.setCellStyle(cellStyle);
+                headerCell.setCellValue("Single Title Customer List");
+                exportSingleTitle(workbook, title, 2, true);
+                saveReport(file, workbook);
+            }
+        }
     }
 
     /**
@@ -1587,12 +1915,7 @@ public class Controller implements Initializable {
      */
     @FXML
     void handleExportSingleTitle(ActionEvent event) {
-
         Title title = titleTable.getSelectionModel().getSelectedItem();
-        exportSingleTitle(event, title);
-    }
-
-    private void exportSingleTitle(ActionEvent event, Title title) {
         if (title == null) {
             Alert selectedAlert = new Alert(Alert.AlertType.INFORMATION, "Please select a title.", ButtonType.OK);
             selectedAlert.setTitle("Confirm Export");
@@ -1609,7 +1932,7 @@ public class Controller implements Initializable {
             File file = fileChooser.showSaveDialog(((Node) event.getTarget()).getScene().getWindow());
 
             if (file != null) {
-                file =  addFileExtension(file);
+                file = addFileExtension(file);
 
                 Workbook workbook = new XSSFWorkbook();
 
@@ -1621,100 +1944,117 @@ public class Controller implements Initializable {
                 org.apache.poi.ss.usermodel.Cell headerCell = header.createCell(0);
                 headerCell.setCellValue("Date: " + today);
                 header = sheet.createRow(1);
-                sheet.addMergedRegion(new CellRangeAddress(1,1,0,2));
+                sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, 2));
                 headerCell = header.createCell(0);
                 CellStyle cellStyle = workbook.createCellStyle();
                 cellStyle.setAlignment(HorizontalAlignment.CENTER);
                 headerCell.setCellStyle(cellStyle);
                 headerCell.setCellValue("Single Title Customer List");
-
-                Row row = sheet.createRow(2);
-                org.apache.poi.ss.usermodel.Cell cell = row.createCell(0);
-                cell.setCellValue("Title: " + title.getTitle());
-
-                Font bold = workbook.createFont();
-                bold.setBold(true);
-                CellStyle headStyle = workbook.createCellStyle();
-                headStyle.setFont(bold);
-                headStyle.setAlignment(HorizontalAlignment.RIGHT);
-
-                row = sheet.createRow(4);
-                cell = row.createCell(0);
-                CellStyle customerHeadStyle = workbook.createCellStyle();
-                customerHeadStyle.setFont(bold);
-                cell.setCellStyle(customerHeadStyle);
-                cell.setCellValue("Customer");
-
-                cell = row.createCell(1);
-                cell.setCellStyle(headStyle);
-                cell.setCellValue("Issue");
-
-                cell = row.createCell(2);
-                cell.setCellStyle(headStyle);
-                cell.setCellValue("Quantity");
-
-                CellStyle reqItemStyle = workbook.createCellStyle();
-                reqItemStyle.setWrapText(true);
-                CellStyle rightAlign = workbook.createCellStyle();
-                rightAlign.setAlignment(HorizontalAlignment.RIGHT);
-
-                ResultSet result;
-                Statement s = null;
-                try
-                {
-                    String sql = String.format("""
-                        SELECT FIRSTNAME, LASTNAME, ISSUE, QUANTITY FROM ORDERS
-                        LEFT JOIN CUSTOMERS C on C.CUSTOMERID = ORDERS.CUSTOMERID
-                        WHERE TITLEID = %s
-                        ORDER BY LASTNAME
-                        """, title.getId());
-
-                    s = conn.createStatement();
-                    result = s.executeQuery(sql);
-                    int i = 5;
-                    int totalQuantity = 0;
-                    while(result.next()) {
-                        row = sheet.createRow(i);
-
-                        cell = row.createCell(0);
-                        cell.setCellValue(result.getString("LASTNAME") + " " + result.getString("FIRSTNAME"));
-
-                        cell = row.createCell(1);
-                        Object issue = result.getObject("ISSUE");
-                        if (issue != null) {
-                            cell.setCellValue(Integer.parseInt(issue.toString()));
-                        } else {
-                            cell.setCellValue("All");
-                        }
-                        cell.setCellStyle(rightAlign);
-
-                        cell = row.createCell(2);
-                        int quantity = result.getInt("QUANTITY");
-                        cell.setCellValue(quantity);
-                        cell.setCellStyle(rightAlign);
-
-                        totalQuantity += quantity;
-                        i++;
-                    }
-                    result.close();
-                    s.close();
-
-                    row = sheet.createRow(i+1);
-                    cell = row.createCell(0);
-                    cell.setCellValue("Total:");
-                    cell = row.createCell(2);
-                    cell.setCellValue(totalQuantity);
-
-                    saveReport(file, workbook);
-                }
-                catch (SQLException sqlExcept)
-                {
-                    Alert alert = new Alert(Alert.AlertType.ERROR, "Database Error. Report may not have saved successfully", ButtonType.OK);
-                    alert.setTitle("Database Error");
-                    alert.show();
-                }
+                exportSingleTitle(workbook, title, 2, true);
+                saveReport(file, workbook);
             }
         }
+    }
+
+    /**
+     * Helper method to get the customer requests for a single title and write them to an Excel spreadsheet. Will
+     * skip all titles with no requests unless the force parameter is set to true
+     * @param workbook the Excel workbook to write to
+     * @param title the title to get information on
+     * @param rowIndex the row of the spreadsheet to start on
+     * @param force whether to force writing all titles with no requests or not
+     * @return the index of the last row that was written to
+     */
+    private int exportSingleTitle(Workbook workbook, Title title, int rowIndex, boolean force) {
+        String sql = String.format("""
+                SELECT FIRSTNAME, LASTNAME, ISSUE, QUANTITY FROM ORDERS
+                LEFT JOIN CUSTOMERS C on C.CUSTOMERID = ORDERS.CUSTOMERID
+                WHERE TITLEID = %s
+                ORDER BY LASTNAME
+                """, title.getId());
+
+        try {
+            Statement s = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+            ResultSet result = s.executeQuery(sql);
+            if (!result.last() && !force) {
+                return rowIndex;
+            }
+            result.beforeFirst();
+
+            Sheet sheet = workbook.getSheetAt(0);
+            Row row = sheet.createRow(rowIndex);
+            org.apache.poi.ss.usermodel.Cell cell = row.createCell(0);
+            cell.setCellValue("Title: " + title.getTitle());
+
+            Font bold = workbook.createFont();
+            bold.setBold(true);
+            CellStyle headStyle = workbook.createCellStyle();
+            headStyle.setFont(bold);
+            headStyle.setAlignment(HorizontalAlignment.RIGHT);
+
+            row = sheet.createRow(rowIndex + 1);
+            cell = row.createCell(0);
+            CellStyle customerHeadStyle = workbook.createCellStyle();
+            customerHeadStyle.setFont(bold);
+            cell.setCellStyle(customerHeadStyle);
+            cell.setCellValue("Customer");
+
+            cell = row.createCell(1);
+            cell.setCellStyle(headStyle);
+            cell.setCellValue("Issue");
+
+            cell = row.createCell(2);
+            cell.setCellStyle(headStyle);
+            cell.setCellValue("Quantity");
+
+            CellStyle reqItemStyle = workbook.createCellStyle();
+            reqItemStyle.setWrapText(true);
+            CellStyle rightAlign = workbook.createCellStyle();
+            rightAlign.setAlignment(HorizontalAlignment.RIGHT);
+
+            int i = rowIndex + 2;
+            int totalQuantity = 0;
+            while (result.next()) {
+                String name = result.getString("LASTNAME") + " " + result.getString("FIRSTNAME");
+                Object issue = result.getObject("ISSUE");
+                int quantity = result.getInt("QUANTITY");
+
+                row = sheet.createRow(i);
+
+                cell = row.createCell(0);
+                cell.setCellValue(name);
+
+                cell = row.createCell(1);
+                if (issue != null) {
+                    cell.setCellValue(Integer.parseInt(issue.toString()));
+                } else {
+                    cell.setCellValue("All");
+                }
+                cell.setCellStyle(rightAlign);
+
+                cell = row.createCell(2);
+                cell.setCellValue(quantity);
+                cell.setCellStyle(rightAlign);
+
+                totalQuantity += quantity;
+                i++;
+            }
+            result.close();
+            s.close();
+
+            row = sheet.createRow(i);
+            cell = row.createCell(0);
+            cell.setCellValue("Total:");
+            cell = row.createCell(2);
+            cell.setCellValue(totalQuantity);
+            rowIndex = i + 2;
+        } catch (SQLException e) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "Database Error. Report may not have saved successfully", ButtonType.OK);
+            alert.setTitle("Database Error");
+            alert.show();
+        }
+
+        return rowIndex;
     }
 
     /**
@@ -1915,6 +2255,38 @@ public class Controller implements Initializable {
     }
 
     /**
+     * Gets the total quantity from all orders for a specified Title
+     * @param titleId The title to get quantity
+     * @return The sum of all request quantities
+     */
+    private int getTitleQuantity(int titleId) {
+        int quantity = 0;
+        ResultSet result;
+        Statement s = null;
+        try
+        {
+            String sql = String.format("""
+                    SELECT SUM(QUANTITY) FROM ORDERS
+                    WHERE titleID = %s
+                    """, titleId);
+
+            s = conn.createStatement();
+            result = s.executeQuery(sql);
+            while(result.next()) {
+                quantity = result.getInt(1);
+            }
+            result.close();
+            s.close();
+        }
+        catch (SQLException sqlExcept)
+        {
+            sqlExcept.printStackTrace();
+        }
+
+        return quantity;
+    }
+
+    /**
      * Returns true or false based on if there are unsaved changes to New
      * Release Flags or not.
      * @return A boolean for whether or not there are unsaved changes
@@ -1924,16 +2296,36 @@ public class Controller implements Initializable {
 
     }
 
-    private String centsToDollars(int price) {
-        String total;
-        int dollars = (price / 100);
-        int cents = (price % 100);
-        if ((cents / 10) == 0) {
-            total = Integer.toString(dollars) + ".0" + Integer.toString(cents);
+    /**
+     * Searches the database for whether or not the given title has any pending issue requests
+     * @param titleId the ID of the title to search for
+     * @return True is the title has any pending issue requests, false otherwise
+     */
+    private boolean hasPendingIssueRequest(int titleId) {
+        boolean pendingIssueRequest = false;
+        ResultSet result;
+        Statement s = null;
+        try
+        {
+            String sql = String.format("""
+                    SELECT COUNT(*) FROM ORDERS
+                    WHERE ISSUE IS NOT NULL AND TITLEID=%s
+                    """, titleId);
+
+            s = conn.createStatement();
+            result = s.executeQuery(sql);
+            result.next();
+            if (result.getInt(1) > 0)
+            {
+                pendingIssueRequest = true;
+            }
+            result.close();
+            s.close();
         }
-        else {
-            total = Integer.toString(dollars) + '.' + Integer.toString(cents);
+        catch (SQLException sqlExcept)
+        {
+            sqlExcept.printStackTrace();
         }
-        return total;
+        return pendingIssueRequest;
     }
 }

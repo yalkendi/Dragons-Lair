@@ -124,7 +124,6 @@ public class NewOrderController {
         }
     }
 
-
     /**
      * Gets the choice from the ComboBox
      * @param setTitle ComboBox containing the title value
