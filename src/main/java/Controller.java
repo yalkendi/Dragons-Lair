@@ -593,9 +593,24 @@ public class Controller implements Initializable {
      */
     private void createConnection() {
         try {
-            conn = DriverManager.getConnection("jdbc:derby:" + System.getProperty("user.home") + "/DragonSlayer/derbyDB;create=true");
+            conn = DriverManager.getConnection("jdbc:derby:" + System.getProperty("user.home") + "/DragonSlayer/derbyDB");
         } catch (SQLException e) {
-            e.printStackTrace();
+            if (e.getErrorCode() == 40000) {
+                CreateDB.main(null);
+                try {
+                    conn = DriverManager.getConnection("jdbc:derby:" + System.getProperty("user.home") + "/DragonSlayer/derbyDB");
+                } catch (SQLException se) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR, "Could not create derby database. Please report this bug.", ButtonType.OK);
+                    alert.setTitle("Database Error");
+                    alert.setHeaderText("");
+                    alert.show();
+                }
+            } else {
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Database error. This is either a bug, or you messed with the DragonSlayer/derbyDB folder.", ButtonType.OK);
+                alert.setTitle("Database Error");
+                alert.setHeaderText("");
+                alert.show();
+            }
         }
     }
 

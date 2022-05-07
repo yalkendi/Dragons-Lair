@@ -106,7 +106,7 @@
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>3.3.0</version>
                 <configuration>
-                    <finalName>final-jar-file-name</finalName>
+                    <finalName>DragonSlayer</finalName>
                     <archive>
                         <manifest>
                             <mainClass>Launcher</mainClass>

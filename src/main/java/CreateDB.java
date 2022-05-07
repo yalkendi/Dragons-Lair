@@ -72,37 +72,38 @@ public class CreateDB {
             conn.commit();
             System.out.println("Committed the transaction");
 
-            try {
-                DriverManager.getConnection("jdbc:derby:;shutdown=true");
-            } catch (SQLException se) {
-                if (((se.getErrorCode() == 50000)
-                        && ("XJ015".equals(se.getSQLState())))) {
-                    System.out.println("Derby shut down normally");
-                } else {
-                    System.out.println("Derby did not shut down normally");
-                    se.printStackTrace();
-                }
-            }
+//            try {
+//                DriverManager.getConnection("jdbc:derby:;shutdown=true");
+//            } catch (SQLException se) {
+//                if (((se.getErrorCode() == 50000)
+//                        && ("XJ015".equals(se.getSQLState())))) {
+//                    System.out.println("Derby shut down normally");
+//                } else {
+//                    System.out.println("Derby did not shut down normally");
+//                    se.printStackTrace();
+//                }
+//            }
         } catch (SQLException sqle) {
             sqle.printStackTrace();
-        } finally {
-            //Cleanup
-            try {
-                if (s != null) {
-                    s.close();
-                    s = null;
-                }
-            } catch (SQLException sqle) {
-                sqle.printStackTrace();
-            }
-            try {
-                if (conn != null) {
-                    conn.close();
-                    conn = null;
-                }
-            } catch (SQLException sqle) {
-                sqle.printStackTrace();
-            }
         }
+//        finally {
+//            //Cleanup
+//            try {
+//                if (s != null) {
+//                    s.close();
+//                    s = null;
+//                }
+//            } catch (SQLException sqle) {
+//                sqle.printStackTrace();
+//            }
+//            try {
+//                if (conn != null) {
+//                    conn.close();
+//                    conn = null;
+//                }
+//            } catch (SQLException sqle) {
+//                sqle.printStackTrace();
+//            }
+//        }
     }
 }
