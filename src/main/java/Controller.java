@@ -1,3 +1,4 @@
+import org.apache.poi.ss.formula.functions.T;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -264,7 +265,7 @@ public class Controller implements Initializable {
         LocalDate sixMonthsAgo = LocalDate.now().minusMonths(6);
         for (Title title : titleTable.getItems()) {
 
-            if (title.getNotes() != "") {
+            if (title.getNotes().compareTo("") != 0) {
                 specialOrderNotes++;
             }
             if (title.getDateFlagged() == null) {
@@ -280,13 +281,12 @@ public class Controller implements Initializable {
 
         databaseOverview.setText(String.format("""
                 Database currently has:
-                    Database currently has:
-                       %s Titles
-                       %s Customers
-                       %s Special Order Notes
-                       %s Pending Issue # Requests
-                       %s Titles have not been flagged for over six months
-                       %s Titles have 0 Customer Requests
+                   %s Titles
+                   %s Customers
+                   %s Special Order Notes
+                   %s Pending Issue # Requests
+                   %s Titles have not been flagged for over six months
+                   %s Titles have 0 Customer Requests
                 """, numTitles, numCustomers, specialOrderNotes, issueNumberRequests, titlesNotFlagged, titlesNoRequests));
     }
 
@@ -506,7 +506,7 @@ public class Controller implements Initializable {
             SELECT TITLEID, TITLE, ISSUE_FLAGGED, PRICE, SUM(QUANTITY) AS QUANTITY, COUNT(CUSTOMERID) AS NUM_REQUESTS FROM (
                                                                                                                        SELECT TITLES.TITLEID, TITLES.TITLE, TITLES.ISSUE_FLAGGED, ORDERS.CUSTOMERID, ORDERS.ISSUE, TITLES.PRICE, ORDERS.QUANTITY
                                                                                                                        from TITLES
-                                                                                                                                LEFT JOIN ORDERS ON ORDERS.TITLEID = TITLES.TITLEID
+                                                                                                                                INNER JOIN ORDERS ON ORDERS.TITLEID = TITLES.TITLEID
                                                                                                                        WHERE TITLES.FLAGGED = true AND (ISSUE = ISSUE_FLAGGED OR ISSUE IS NULL)
                                                                                                                    ) AS FLAGGED_ORDERS
             GROUP BY TITLEID, TITLE, PRICE, ISSUE_FLAGGED
@@ -1668,6 +1668,7 @@ public class Controller implements Initializable {
     @FXML
     void handleExportFlaggedTitles(ActionEvent event) {
         ObservableList<FlaggedTable> titles = getFlaggedTitles();
+        ObservableList<Title> titlesTable = titleTable.getItems();
 
         LocalDate today = LocalDate.now();
         String fileName = "All Flagged Titles " + today + ".xlsx";
@@ -1697,9 +1698,14 @@ public class Controller implements Initializable {
             headerCell.setCellStyle(cellStyle);
             headerCell.setCellValue("All Flagged Titles with Requests");
             int rowIndex = 2;
-            for (FlaggedTable title : titles) {
-                Title tempTitle = new Title(title.getTitleId(), title.getFlaggedTitleName(), 0, "");
-                rowIndex = exportSingleTitle(workbook, tempTitle, rowIndex, false);
+            for (FlaggedTable flagged : titles) {
+                Title tempTitle = null;
+                for (Title title : titlesTable) {
+                    if (title.getId() == flagged.getTitleId()) {
+                        tempTitle = title;
+                    }
+                }
+                rowIndex = exportSingleTitle(workbook, tempTitle, rowIndex, false, true);
             }
             saveReport(file, workbook);
         }
@@ -1743,7 +1749,7 @@ public class Controller implements Initializable {
             headerCell.setCellValue("All Customer Requests by Title");
             int rowIndex = 2;
             for (Title title : titles) {
-                rowIndex = exportSingleTitle(workbook, title, rowIndex, false);
+                rowIndex = exportSingleTitle(workbook, title, rowIndex, false, false);
             }
             saveReport(file, workbook);
         }
@@ -1923,7 +1929,7 @@ public class Controller implements Initializable {
                 cellStyle.setAlignment(HorizontalAlignment.CENTER);
                 headerCell.setCellStyle(cellStyle);
                 headerCell.setCellValue("Single Title Customer List");
-                exportSingleTitle(workbook, title, 2, true);
+                exportSingleTitle(workbook, title, 2, true, false);
                 saveReport(file, workbook);
             }
         }
@@ -1970,7 +1976,7 @@ public class Controller implements Initializable {
                 cellStyle.setAlignment(HorizontalAlignment.CENTER);
                 headerCell.setCellStyle(cellStyle);
                 headerCell.setCellValue("Single Title Customer List");
-                exportSingleTitle(workbook, title, 2, true);
+                exportSingleTitle(workbook, title, 2, true, false);
                 saveReport(file, workbook);
             }
         }
@@ -1985,7 +1991,7 @@ public class Controller implements Initializable {
      * @param force whether to force writing all titles with no requests or not
      * @return the index of the last row that was written to
      */
-    private int exportSingleTitle(Workbook workbook, Title title, int rowIndex, boolean force) {
+    private int exportSingleTitle(Workbook workbook, Title title, int rowIndex, boolean force, boolean flaggedReport) {
         String sql = String.format("""
                 SELECT FIRSTNAME, LASTNAME, ISSUE, QUANTITY FROM ORDERS
                 LEFT JOIN CUSTOMERS C on C.CUSTOMERID = ORDERS.CUSTOMERID
@@ -2038,6 +2044,12 @@ public class Controller implements Initializable {
                 String name = result.getString("LASTNAME") + " " + result.getString("FIRSTNAME");
                 Object issue = result.getObject("ISSUE");
                 int quantity = result.getInt("QUANTITY");
+                if (issue != null && flaggedReport) {
+                    int tempIssue = (int) issue;
+                    if (tempIssue != title.getIssueFlagged()) {
+                        continue;
+                    }
+                }
 
                 row = sheet.createRow(i);
 
