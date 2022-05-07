@@ -179,4 +179,5 @@ public class Title {
      * @param issueFlagged the issue to flag for this title
      */
     public void setIssueFlagged(int issueFlagged) { this.issueFlagged = issueFlagged; }
+
 }
