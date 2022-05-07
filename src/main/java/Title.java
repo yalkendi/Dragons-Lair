@@ -169,4 +169,5 @@ public class Title {
     public int getIssueFlagged() { return issueFlagged; }
 
     public void setIssueFlagged(int issueFlagged) { this.issueFlagged = issueFlagged; }
+
 }
