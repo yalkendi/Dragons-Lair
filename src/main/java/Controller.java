@@ -1394,7 +1394,7 @@ public class Controller implements Initializable {
             LocalDate sixMonthsAgo = LocalDate.now().minusMonths(6);
             int i = 4;
             for (Title title : titles) {
-                if (title.getDateFlagged().isBefore(sixMonthsAgo)) {
+                if (title.getDateFlagged() == null || title.getDateFlagged().isBefore(sixMonthsAgo)) {
                     row = sheet.createRow(i);
 
                     cell = row.createCell(0);
@@ -1402,7 +1402,11 @@ public class Controller implements Initializable {
                     cell.setCellStyle(wrapStyle);
 
                     cell = row.createCell(1);
-                    cell.setCellValue(title.getDateFlagged().toString());
+                    if (title.getDateFlagged() != null) {
+                        cell.setCellValue(title.getDateFlagged().toString());
+                    } else {
+                        cell.setCellValue("Never");
+                    }
                     cell.setCellStyle(wrapStyle);
 
                     i++;
@@ -1612,6 +1616,7 @@ public class Controller implements Initializable {
             {
                 String sql = """
                             SELECT * FROM CUSTOMERS
+                            ORDER BY LASTNAME
                             """;
 
                 s = conn.createStatement();
