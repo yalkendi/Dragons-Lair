@@ -13,4 +13,4 @@ Kevin McEnhill
 
 **JavaDoc**
 Here is a link to the current java documentation:
-https://yalkendi.github.io/Dragons-Lair/Javadoc/package-summary.html
+https://logan-wood98.github.io/Dragons-Lair/docs/package-summary.html
